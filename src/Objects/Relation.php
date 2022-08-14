@@ -33,20 +33,24 @@ class Relation extends AbstractObject
      * @var array<string,bool|null>
      */
     public const HAS_MANY_TYPES = [
+        // Ones
+        MorphTo::class => false,
+        BelongsTo::class => false,
+        HasOne::class => false,
+        MorphOne::class => false,
+        HasOneThrough::class => false,
+        // Manys
         BelongsToMany::class => true,
+        MorphToMany::class => true,
         HasMany::class => true,
         HasManyThrough::class => true,
-        HasOne::class => false,
-        HasOneOrMany::class => null,
-        HasOneThrough::class => false,
         MorphMany::class => true,
-        MorphOne::class => false,
+        // OneOrManys
+        HasOneOrMany::class => null,
         MorphOneOrMany::class => null,
+        // Pivots
         MorphPivot::class => false,
-        MorphTo::class => false,
-        MorphToMany::class => true,
         Pivot::class => false,
-        BelongsTo::class => false,
         // Default
         EloquentRelation::class => null,
     ];
@@ -60,20 +64,24 @@ class Relation extends AbstractObject
      * @var array<string,bool|null>
      */
     public const HAS_MODEL_TYPES = [
+        // Ones
+        BelongsTo::class => true,
+        MorphTo::class => false,
+        HasOne::class => true,
+        MorphOne::class => false,
+        HasOneOrMany::class => true,
+        // Manys
         BelongsToMany::class => true,
+        MorphToMany::class => false,
         HasMany::class => true,
         HasManyThrough::class => true,
-        HasOne::class => true,
-        HasOneOrMany::class => true,
+        MorphMany::class => true,
+        // OneOrManys
         HasOneThrough::class => true,
-        MorphMany::class => false,
-        MorphOne::class => false,
         MorphOneOrMany::class => false,
+        // Pivots
         MorphPivot::class => false,
-        MorphTo::class => false,
-        MorphToMany::class => false,
         Pivot::class => false,
-        BelongsTo::class => true,
         // Default
         EloquentRelation::class => false,
     ];
@@ -85,7 +93,7 @@ class Relation extends AbstractObject
     public string $relatedModel;
 
     /** @var bool Does this relation return multiple models? */
-    public bool $returnsMany;
+    public bool|null $returnsMany;
 
     /** @var Typehint The return typehint for this relation */
     public Typehint $type;
@@ -129,11 +137,20 @@ class Relation extends AbstractObject
 
         $this->relatedModel = $modelType;
 
-        if ($hasMany) {
-            $modelType = Collection::class . "<int,\\{$modelType}>";
-        }
+        // Define what the "hasMany" return type would look like
+        $modelTypeMany = Collection::class . "<int,\\{$modelType}>";
 
-        return $this->type = new Typehint($modelType);
+        // Get the relevant typehint based on whether it returns one, many or oneOrMany
+        $type = match ($hasMany) {
+            true => $modelTypeMany,
+            null => [
+                $modelType,
+                $modelTypeMany,
+            ],
+            false => $modelType,
+        };
+
+        return $this->type = new Typehint($type);
     }
 
     /**
