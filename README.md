@@ -198,7 +198,7 @@ You should never reference a `ProxiedQueries\...\Builder` class in your code (ty
 - Inside a proxied model query, update `first`, `createOrUpdate`, `findOrFail`, etc so that they return the relevant model instead of base `Model`
 - Add tests in pest
     - Not sure if every relation currently works. Only tested a few including belongsTo, belongsToMany, hasMany, hasOne, morphMany.
-
+- Add wider Laravel support -- currently restricted to recent versions of Laravel where `artisan db:table` is available.
 
 ## Notes
 
