@@ -1,0 +1,16 @@
+{
+    "name": "docwatch/docwatch",
+    "description": "An IDE Helper for Laravel apps that generates automatic doc blocks for your models",
+    "autoload": {
+        "psr-4": {
+            "DocWatch\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "DocWatch\\ServiceProvider"
+            ]
+        }
+    }
+}
