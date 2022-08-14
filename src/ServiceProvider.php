@@ -39,11 +39,12 @@ class ServiceProvider extends BaseServiceProvider
     {
         $this->publishes([
             __DIR__ . '/../config/docwatch.php' => config_path('docwatch.php'),
-        ]);
+        ], 'docwatch');
 
         AboutCommand::add('Docwatch', fn () => [
             'DocWatch Version' => static::DOCWATCH_VERSION,
             'Has Generated?' => ($exists = file_exists($file = Generator::outputFile())) ? '<fg=green;>YES</>' : '<fg=bright-yellow>NO</>',
+            'Output File' => $file,
             'Last Updated At' => ($exists) ? Carbon::parse(filemtime($file))->setTimezone(Generator::timezone())->format('d M Y @ h:ia') : '--',
         ]);
     }
