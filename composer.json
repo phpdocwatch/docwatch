@@ -1,6 +1,13 @@
 {
     "name": "docwatch/docwatch",
     "description": "An IDE Helper for Laravel apps that generates automatic doc blocks for your models",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bradie Tilley",
+            "email": "bradie@hatchet.com.au"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "DocWatch\\": "src/"
