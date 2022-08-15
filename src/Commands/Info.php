@@ -13,7 +13,7 @@ class Info extends Command
      *
      * @var string
      */
-    protected $signature = 'docwatch:info {directories?}';
+    protected $signature = 'docwatch:info';
 
     /**
      * The console command description.
@@ -29,14 +29,8 @@ class Info extends Command
      */
     public function handle()
     {
-        $directories = $this->argument('directories');
-        if ($directories !== null) {
-            $directories = explode(',', $directories);
-        }
-
         // Get the docblock models
         Generator::instance()
-            ->directories($directories)
             ->models()
             ->sortBy(fn (Model $model) => $model->namespace)
             ->each(function (Model $model) {
