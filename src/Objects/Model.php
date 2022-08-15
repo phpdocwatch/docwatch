@@ -120,7 +120,7 @@ class Model extends AbstractObject
             $this->parseRelations();
             $this->parseScopes();
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::debug('DOCWATCH Failure: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::debug('DOCWATCH Failure: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             // Most likely new model not yet migrated into DB (fails on parseColumns).
             // Reset all fields, relations, scopes
 
