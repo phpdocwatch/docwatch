@@ -1,6 +1,6 @@
 # DocWatch
 
-This plugin produces a bit more insight into your eloquent models, and provides systems like Intelephense with more context.
+Work In Progress: This plugin produces a bit more insight into your eloquent models, and provides systems like Intelephense with more context.
 
 
 ## Installation
