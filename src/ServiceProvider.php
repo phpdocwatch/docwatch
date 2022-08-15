@@ -46,6 +46,9 @@ class ServiceProvider extends BaseServiceProvider
             'Has Generated?' => ($exists = file_exists($file = Generator::outputFile())) ? '<fg=green;>YES</>' : '<fg=bright-yellow>NO</>',
             'Output File' => $file,
             'Last Updated At' => ($exists) ? Carbon::parse(filemtime($file))->setTimezone(Generator::timezone())->format('d M Y @ h:ia') : '--',
+            'Number of models' => Generator::instance()->models()->count(),
+            'Number of events' => Generator::instance()->events()->count(),
+            'Number of jobs' => Generator::instance()->jobs()->count(),
         ]);
     }
 }

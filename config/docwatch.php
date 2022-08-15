@@ -57,6 +57,8 @@ return [
     /**
      * This will convert the filemtime of the `outputFile` to the given timezone when the "last
      * generated" timestamp is displayed in the `artisan about` command.
+     *
+     * @var string
      */
     'timezone' => 'UTC',
 ];
