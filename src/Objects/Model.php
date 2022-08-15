@@ -2,6 +2,7 @@
 
 namespace DocWatch\Objects;
 
+use DocWatch\Generator;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\Relation as EloquentRelation;
@@ -37,7 +38,7 @@ class Model extends AbstractObject
     public static function createFromPath(string $path): ?static
     {
         // Extract Namespace
-        $namespace = static::extractFullNamespace($path);
+        $namespace = Generator::extractFullNamespace($path);
 
         // Ignore if the namespace couldn't be extracted
         if ($namespace === null) {
@@ -65,43 +66,6 @@ class Model extends AbstractObject
 
         // Return self
         return new static($eloquent, $path);
-    }
-
-    /**
-     * Extract the full namespace of the given model by its path. This will iterate all lines
-     * until it finds a namespace definition line, and a class name line.
-     *
-     * @param string $path
-     * @return string|null
-     */
-    public static function extractFullNamespace(string $path): ?string
-    {
-        $f = fopen($path, 'r');
-
-        $namespace = null;
-        $class = null;
-
-        while (($line = fgets($f, 1000)) !== false) {
-            if (($namespace === null) && preg_match('/^namespace (.+);$/', $line, $m)) {
-                $namespace = $m[1];
-            }
-
-            if (($class === null) && preg_match('/^(?:readonly|abstract|final)?\s*class ([^ ]+)/', $line, $m)) {
-                $class = $m[1];
-
-                // Class comes after namespace so once we see this line, bail immediately
-                break;
-            }
-        }
-
-        fclose($f);
-
-        // We need both namespace and class or it's invalid
-        if ($namespace === null || $class === null) {
-            return null;
-        }
-
-        return $namespace . '\\' . $class;
     }
 
     /**

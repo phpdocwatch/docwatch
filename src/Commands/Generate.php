@@ -4,7 +4,10 @@ namespace DocWatch\Commands;
 
 use Illuminate\Console\Command;
 use DocWatch\Generator;
+use DocWatch\Objects\AbstractObject;
 use DocWatch\Objects\Model;
+use DocWatch\Objects\Event;
+use DocWatch\Objects\Job;
 use DocWatch\Objects\ModelQueryBuilder;
 
 class Generate extends Command
@@ -14,14 +17,14 @@ class Generate extends Command
      *
      * @var string
      */
-    protected $signature = 'docwatch:generate {directories?}';
+    protected $signature = 'docwatch:generate';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Generate doc blocks for all your models';
+    protected $description = 'Generate doc blocks for all your models and events';
 
     /**
      * Execute the console command.
@@ -30,33 +33,37 @@ class Generate extends Command
      */
     public function handle()
     {
-        // Optional override for the list of directories to scan. Defaults to config value
-        $directories = $this->argument('directories');
-        if ($directories !== null) {
-            $directories = explode(',', $directories);
-        }
+        $separator = "\n\n\n";
 
         // Get the docblock models
-        $models = Generator::instance()
-            ->directories($directories)
-            ->models()
-            ->sortBy(fn (Model $model) => $model->namespace);
+        $models = Generator::instance()->models()->sortBy(fn (Model $model) => $model->namespace);
 
-        // Generate the docblocks for the models
-        $docs = $models->map(fn (Model $model) => (string) $model);
+        // Get the docblock events
+        $events = Generator::instance()->events()->sortBy(fn (Event $event) => $event->namespace);
+
+        // Get the docblock jobs
+        $jobs = Generator::instance()->jobs()->sortBy(fn (Job $job) => $job->namespace);
+
+        // Get the docblock query builders
+        $builders = collect();
 
         if (Generator::useProxiedQueryBuilders()) {
             // Find models with scopes
             $builders = $models->filter(fn (Model $model) => $model->scopes->isNotEmpty())
                 ->map(fn (Model $model) => new ModelQueryBuilder($model, $model->scopes));
-
-            // If there are scopes/builders
-            if ($builders->isNotEmpty()) {
-                $docs = $docs->concat($builders->map(fn (ModelQueryBuilder $builder) => (string) $builder));
-            }
         }
 
+        $docs = collect([
+            $models,
+            $events,
+            $jobs,
+            $builders,
+        ])
+            ->collapse()
+            ->map(fn (AbstractObject $object) => (string) $object)
+            ->implode($separator);
+
         // Write the docblocks
-        file_put_contents(Generator::outputFile(), "<?php\n" . $docs->implode("\n\n\n"));
+        file_put_contents(Generator::outputFile(), "<?php\n" . $docs);
     }
 }
