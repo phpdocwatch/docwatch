@@ -110,7 +110,8 @@ class Generator
                     ->map(fn ($path) => Model::createFromPath($path))
                     ->filter(); // ignore those that failed validation (aren't models, aren't instantiable, etc)
             })
-            ->collapse();
+            ->collapse()
+            ->sortBy(fn (Model $model) => $model->namespace);
 
         return $all;
     }
@@ -134,7 +135,8 @@ class Generator
                     ->map(fn (SplFileInfo $file) => Event::createFromPath($file->getRealPath()))
                     ->filter(); // ignore those that failed validation (aren't events, aren't instantiable, etc)
             })
-            ->collapse();
+            ->collapse()
+            ->sortBy(fn (Event $event) => $event->namespace);
 
         return $all;
     }
@@ -158,7 +160,8 @@ class Generator
                     ->map(fn (SplFileInfo $file) => Job::createFromPath($file->getRealPath()))
                     ->filter(); // ignore those that failed validation (aren't jobs, aren't instantiable, etc)
             })
-            ->collapse();
+            ->collapse()
+            ->sortBy(fn (Job $job) => $job->namespace);
 
         return $all;
     }

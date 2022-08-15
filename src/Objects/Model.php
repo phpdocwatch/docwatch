@@ -147,7 +147,9 @@ class Model extends AbstractObject
             })
             ->filter(fn (array $data) => !empty($data['name']));
 
-        $this->columns = $columns->map(fn (array $data) => new Column($this, $data['name'], $data['type'], $data['nullable']));
+        $this->columns = $columns
+            ->map(fn (array $data) => new Column($this, $data['name'], $data['type'], $data['nullable']))
+            ->sortBy(fn (Column $column) => $column->name);
     }
 
     /**
@@ -181,7 +183,8 @@ class Model extends AbstractObject
             })
             ->filter()
             ->values()
-            ->map(fn (array $method) => new Accessor($this, $method['method'], $method['name']));
+            ->map(fn (array $method) => new Accessor($this, $method['method'], $method['name']))
+            ->sortBy(fn (Accessor $accessor) => $accessor->name);
     }
 
     /**
@@ -201,7 +204,8 @@ class Model extends AbstractObject
 
                 return false;
             })
-            ->map(fn (ReflectionMethod $method) => new Relation($this, $method->getName()));
+            ->map(fn (ReflectionMethod $method) => new Relation($this, $method->getName()))
+            ->sortBy(fn (Relation $relation) => $relation->name);
     }
 
     /**
@@ -216,7 +220,8 @@ class Model extends AbstractObject
         $this->scopes = collect($class->getMethods())
             ->map(fn (ReflectionMethod $method) => (preg_match('/^scope([A-Z].+)$/', $name = $method->getName(), $m)) ? $name : null)
             ->filter()
-            ->map(fn (string $method) => new Scope($this, $method));
+            ->map(fn (string $method) => new Scope($this, $method))
+                ->sortBy(fn (Scope $scope) => $scope->name);
     }
 
     /**
