@@ -144,7 +144,8 @@ class Model extends AbstractObject
                     'type' => $type,
                     'nullable' => $nullable,
                 ];
-            });
+            })
+            ->filter(fn (array $data) => !empty($data['name']));
 
         $this->columns = $columns->map(fn (array $data) => new Column($this, $data['name'], $data['type'], $data['nullable']));
     }
