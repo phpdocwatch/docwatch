@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
+use ReflectionParameter;
 use ReflectionType;
 use ReflectionUnionType;
 use Stringable;
@@ -109,7 +110,7 @@ class Typehint implements Stringable
     /**
      * Guess the type based on the given type, ready for docblocks.
      *
-     * @param string|null $type
+     * @param mixed $type
      * @return string
      */
     public static function guessType($type = null, bool $nullable = false): static
@@ -170,7 +171,7 @@ class Typehint implements Stringable
 
         // A
         if ($type instanceof ReflectionNamedType) {
-            $type = $type->getName();
+            $type = $type->getName() . ($type->allowsNull() ? '|null' : '');
         }
 
         // Void -- just return immediately I guess, no nesting needed?
