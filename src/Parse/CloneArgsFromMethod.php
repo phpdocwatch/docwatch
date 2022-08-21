@@ -54,10 +54,14 @@ class CloneArgsFromMethod implements ParseInterface
             return false;
         }
 
-        // With the source method create a new MethodDocblock to reference for the destination methods.
-        $source = new MethodDocblock(
-            $class->getMethod($sourceMethod)
-        );
+        try {
+            // With the source method create a new MethodDocblock to reference for the destination methods.
+            $source = new MethodDocblock(
+                $class->getMethod($sourceMethod)
+            );
+        } catch (ReflectionException $e) {
+            return false;
+        }
 
         $ran = false;
 
