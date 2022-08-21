@@ -1,41 +1,44 @@
 <?php
 
-namespace DocWatch\Commands;
+namespace DocWatch\DocWatch\Commands;
 
+use DocWatch\DocWatch\Generator;
 use Illuminate\Console\Command;
-use DocWatch\Generator;
+use Illuminate\Support\Facades\File;
 
+/**
+ * @requires Laravel
+ */
 class Clear extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'docwatch:clear';
+    public $signature = 'docwatch:clear';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Clear the docwatch file';
-
-    /**
-     * Execute the console command.
-     *
-     * @return int
-     */
     public function handle()
     {
-        $file = Generator::outputFile();
+        [$class, $message] = static::runDelete();
 
-        if (file_exists($file)) {
-            unlink($file);
+        $this->line("<fg={$class}>$message</>");
+    }
 
-            $this->info('Docwatch cleared');
-        } else {
-            $this->warn('Docwatch file doesn\'t exist; if conflicts persist check previous output file locations');
+    public static function runDelete()
+    {
+        $path = Generator::getOutputFile();
+
+        if (file_exists($path)) {
+            $size = static::humanBytes(filesize($path));
+            File::delete($path);
+
+            return ['green', '>>> Doc Watch file successfully deleted (-' . $size . ')'];
         }
+
+        return ['yellow', '>>> Doc Watch file does not exist; not deleted'];
+    }
+
+    public static function humanBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        $power = $bytes > 0 ? floor(log($bytes, 1024)) : 0;
+
+        return number_format($bytes / pow(1024, $power), 2, '.', ',') . ' ' . $units[$power];
     }
 }

@@ -1,12 +1,9 @@
 <?php
 
-namespace DocWatch\Objects;
+namespace DocWatch\DocWatch\Items;
 
-use Carbon\Carbon;
-use Illuminate\Support\Str;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
-use ReflectionParameter;
 use ReflectionType;
 use ReflectionUnionType;
 use Stringable;
@@ -20,9 +17,9 @@ class Typehint implements Stringable
         'bool' => 'boolean',
         'boolean' => 'boolean',
         'char' => 'string',
-        'datetimetz' => Carbon::class,
-        'datetime' => Carbon::class,
-        'date' => Carbon::class,
+        'datetimetz' => 'datetime',
+        'datetime' => 'datetime',
+        'date' => 'datetime',
         'decimal' => 'float',
         'double' => 'float',
         'enum' => 'casts:string',
@@ -49,7 +46,7 @@ class Typehint implements Stringable
         'multipoint' => 'string',
         'multipolygon' => 'string',
         'nullablemorphs' => 'string',
-        'nullabletimestamps' => Carbon::class,
+        'nullabletimestamps' => 'datetime',
         'nullableuuidmorphs' => 'string',
         'point' => 'string',
         'polygon' => 'string',
@@ -57,16 +54,16 @@ class Typehint implements Stringable
         'set' => 'string',
         'smallincrements' => 'integer',
         'smallint' => 'integer',
-        'softdeletestz' => Carbon::class,
-        'softdeletes' => Carbon::class,
+        'softdeletestz' => 'datetime',
+        'softdeletes' => 'datetime',
         'string' => 'string',
         'text' => 'string',
         'timetz' => 'string',
         'time' => 'string',
-        'timestamptz' => Carbon::class,
-        'timestamp' => Carbon::class,
-        'timestampstz' => Carbon::class,
-        'timestamps' => Carbon::class,
+        'timestamptz' => 'datetime',
+        'timestamp' => 'datetime',
+        'timestampstz' => 'datetime',
+        'timestamps' => 'datetime',
         'tinyincrements' => 'integer',
         'tinyint' => 'integer',
         'tinytext' => 'string',
@@ -92,9 +89,9 @@ class Typehint implements Stringable
      *
      * @param ReflectionType|ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType|string|bool|null|mixed $type
      */
-    public function __construct($type)
+    public function __construct($type, bool $literalValue = false)
     {
-        $this->types = static::parseTypes($type);
+        $this->types = static::parseTypes($type, literalValue: $literalValue);
     }
 
     /**
@@ -133,11 +130,20 @@ class Typehint implements Stringable
      * string|bool|null|true|false|etc -> stringified
      *
      * @param ReflectionType|ReflectionNamedType|ReflectionUnionType|ReflectionIntersectionType|string|bool|null|mixed $type
-     * @param bool $nested = false (should )
+     * @param bool $nested = false
+     * @param bool $literalValue = false
      * @return string
      */
-    public static function parseTypes($type, bool $nested = false): string
+    public static function parseTypes($type, bool $nested = false, bool $literalValue = false): string
     {
+        if ($literalValue) {
+            if (is_array($type) || is_int($type) || is_string($type)) {
+                return json_encode($type);
+            }
+
+            // fallthrough?
+        }
+
         $generics = '';
         if (is_string($type) && preg_match(static::GENERICS_REGEX, $type, $m)) {
             $type = preg_replace(static::GENERICS_REGEX, '', $type);
@@ -150,23 +156,43 @@ class Typehint implements Stringable
 
         // A&B
         if ($type instanceof ReflectionIntersectionType) {
-            return $open . collect($type->getTypes())
-                ->map(fn (ReflectionType $type) => static::parseTypes($type, nested: true))
-                ->implode('&') . $close;
+            return implode('', [
+                $open,
+                implode(
+                    '&',
+                    array_map(
+                        fn (ReflectionType $type) => static::parseTypes($type, nested: true),
+                        $type->getTypes(),
+                    ),
+                ),
+                $close,
+            ]);
         }
 
         // A|B
         if ($type instanceof ReflectionUnionType) {
-            return $open . collect($type->getTypes())
-                ->map(fn (ReflectionNamedType $type) => static::parseTypes($type, nested: true))
-                ->implode('|') . $close;
+            return implode('', [
+                $open,
+                implode(
+                    '|',
+                    array_map(
+                        fn (ReflectionType $type) => static::parseTypes($type, nested: true),
+                        $type->getTypes(),
+                    ),
+                ),
+                $close,
+            ]);
         }
 
         // Array format
         if (is_array($type)) {
-            $type = collect($type)
-                ->map(fn ($type) => static::parseTypes($type))
-                ->implode('|');
+            $type = implode(
+                '|',
+                array_map(
+                    fn ($type) => static::parseTypes($type, nested: true),
+                    $type
+                ),
+            );
         }
 
         // A
@@ -175,7 +201,7 @@ class Typehint implements Stringable
         }
 
         // Void -- just return immediately I guess, no nesting needed?
-        if ($type === 'void') {
+        if ($type === 'void' || $type === 'mixed' || $type === 'static' || $type === 'self' || $type === 'mixed|void') {
             return $type;
         }
 
@@ -189,7 +215,7 @@ class Typehint implements Stringable
         }
 
         // Typically class names:
-        if (is_string($type) && (class_exists($type) || Str::contains($type, '\\'))) {
+        if (is_string($type) && (class_exists($type) || (strpos($type, '\\') !== false))) {
             $type = '\\' . ltrim($type, '\\');
         }
 
@@ -204,10 +230,40 @@ class Typehint implements Stringable
     /**
      * Get the mixed typehint
      *
-     * @return void
+     * @return static
      */
     public static function mixed()
     {
         return new static('mixed');
+    }
+
+    /**
+     * Get the static typehint
+     *
+     * @return static
+     */
+    public static function static()
+    {
+        return new static('static');
+    }
+
+    /**
+     * Get the self typehint
+     *
+     * @return static
+     */
+    public static function self()
+    {
+        return new static('self');
+    }
+
+    /**
+     * Get the self typehint
+     *
+     * @return static
+     */
+    public static function mixedVoid()
+    {
+        return new static('mixed|void');
     }
 }

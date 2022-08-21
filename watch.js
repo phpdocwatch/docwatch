@@ -1,26 +1,52 @@
+/**
+ * @requires Laravel
+ */
+
 const fs = require('fs');
 const { exec } = require('child_process');
-const rootFolder = (process.argv.slice(2)[0] !== undefined) ? process.argv.slice(2)[0] : process.cwd();
-const modelFolder = rootFolder + '/app/Models';
+
 let debounce = null;
+let config = [];
 
-fs.watch(modelFolder, (eventType, filename) => {
-    if (debounce !== null) {
-        clearTimeout(debounce);
-    }
-
-    triggerRun();
+// Load the configuration file and boot the watcher.
+fs.readFile(__dirname + '/watch.json', (err, data) => {
+    config = JSON.parse(data);
+    boot();
 });
 
+// Run the generate command
 function triggerRun() {
     debounce = setTimeout(() => {
-        const cmd = 'php ' + rootFolder + '/artisan docwatch:generate';
-        console.log('-- Generating docs: ' + cmd);
+        const cmd = 'php ' + config.artisan + ' docwatch:generate';
+        console.log("\n\n\nRunning: " + cmd);
 
-        exec(cmd);
+        exec(cmd).stdout.pipe(process.stdout);;
     }, 200);
 }
 
-console.log("\nWatching directory: " + modelFolder + "\n");
+// Run after the configuration file is loaded.
+function boot() {
+    // Standardise the list of paths to watch
+    const paths = {};
+    config.rules.forEach((rule) => {
+        const rulePaths = Array.isArray(rule.path) ? rule.path : [rule.path];
 
-triggerRun();
+        rulePaths.forEach((path) => paths[path] = path);
+    });
+
+    // Iterate each path and watch them individually
+    Object.keys(paths).forEach((path) => {
+        fs.watch(path, () => {
+            if (debounce !== null) {
+                clearTimeout(debounce);
+            }
+
+            triggerRun();
+        });
+
+        console.log("Watching directory: " + path);
+    });
+
+    triggerRun();
+}
+

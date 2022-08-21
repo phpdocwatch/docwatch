@@ -2,63 +2,150 @@
 
 return [
     /**
-     * A list of directories to find models that should be scanned when the generator is used.
+     * List of directories to search for classes to create dockblocks for
      *
-     * @var array<string>|string
+     * path        - The path to the directory to search
+     * type        - The type of class to search for (model, event, job)
+     * extends     - Resolved PHP classes must extend one or more of the given class names
+     * traits      - Resolved PHP classes must use one or more of the given trait names
+     * parsers     - List of extractor rules to run when generating docblocks for the methods and properties
+     *
+     * @var array<array>
      */
-    'modelPaths' => [
-        'app/Models',
+    'rules' => [
+        [
+            'path' => 'app' . DIRECTORY_SEPARATOR . 'Models',
+            'type' => 'model',
+            'extends' => \Illuminate\Database\Eloquent\Model::class,
+            'parsers' => [
+                \DocWatch\DocWatch\Parse\Laravel\DatabaseColumnsAsProperties::class => [
+                    'command' => 'db:table',
+                ],
+                \DocWatch\DocWatch\Parse\Laravel\RelationsAsProperties::class => [
+                    'except' => [],
+                ],
+                \DocWatch\DocWatch\Parse\Laravel\AccessorsAsProperties::class => [
+                    'oldStyle' => true,
+                    'newStyle' => true,
+                    'differentiateReadWrite' => true,
+                    'case' => 'snake',
+                ],
+                \DocWatch\DocWatch\Parse\Laravel\RelationsAsQueryBuilderMethods::class => [],
+                \DocWatch\DocWatch\Parse\Laravel\ScopesAsQueryBuilderMethods::class => [],
+                \DocWatch\DocWatch\Parse\DocblockPropertyOverrides::class => [
+                    'property' => true,
+                    'class' => true,
+                ],
+                \DocWatch\DocWatch\Parse\DockblockMethodOverrides::class => [
+                    'method' => true,
+                    'class' => true,
+                ],
+            ],
+        ],
+        [
+            'path' => 'app' . DIRECTORY_SEPARATOR . 'Events',
+            'type' => 'event',
+            'traits' => \Illuminate\Foundation\Events\Dispatchable::class,
+            'parsers' => [
+                \DocWatch\DocWatch\Parse\CloneArgsFromMethod::class => [
+                    'src' => '__construct',
+                    'dst' => [
+                        'dispatch' => true,
+                        'dispatchIf' => '$arguments',
+                        'dispatchUnless' => '$arguments',
+                    ],
+                    'returnFrom' => 'dst',
+                ],
+                \DocWatch\DocWatch\Parse\DockblockMethodOverrides::class => [
+                    'method' => true,
+                    'class' => true,
+                ],
+            ],
+        ],
+        [
+            'path' => 'app' . DIRECTORY_SEPARATOR . 'Jobs',
+            'type' => 'job',
+            'traits' => \Illuminate\Foundation\Bus\Dispatchable::class,
+            'parsers' => [
+                \DocWatch\DocWatch\Parse\CloneArgsFromMethod::class => [
+                    'src' => '__construct',
+                    'dst' => [
+                        'dispatch' => true,
+                        'dispatchIf' => '$arguments',
+                        'dispatchUnless' => '$arguments',
+                        'dispatchSync' => true,
+                        'dispatchNow' => true,
+                        'dispatchAfterResponse' => true,
+                    ],
+                    'returnFrom' => 'dst',
+                ],
+                \DocWatch\DocWatch\Parse\DockblockMethodOverrides::class => [
+                    'method' => true,
+                    'class' => true,
+                ],
+            ],
+        ],
+        /**
+         * Example custom handler that reads a command's options (\My\Custom\Extractor\ExtractCommandOptions) and
+         * extracts the variables to be used as parameters for the command's static constructor.
+         *
+         *      // Example command signature:
+         *      'command-name {user} {--date=} {--message=}'
+         *
+         *      // The above arguments would then be typehinted to your IDE as:
+         *      CommandName::dispatchNow(int $user, string $date = null, string $message = null));
+         *
+         *      // Then you use it like this:
+         *      CommandName::dispatchNow($user->id, $date->format('Y-m-d'), (string) $message);
+         */
+        [
+            'path' => 'app' . DIRECTORY_SEPARATOR . 'Console' . DIRECTORY_SEPARATOR . 'Commands',
+            'type' => 'command',
+            'extends' => [
+                \Illuminate\Console\Command::class,
+            ],
+            'parsers' => [
+                \DocWatch\DocWatch\Parse\Laravel\ExtractCommandOptions::class => [
+                    'method' => 'dispatchNow',
+                ],
+                \DocWatch\DocWatch\Parse\DockblockMethodOverrides::class => [
+                    'method' => false,
+                    'class' => true,
+                ],
+            ],
+        ],
     ],
 
     /**
-     * A list of directories to find events that should be scanned when the generator is used.
-     *
-     * @var array<string>|string
-     */
-    'eventPaths' => [
-        'app/Events',
-    ],
-
-    /**
-     * A list of directories to find jobs that should be scanned when the generator is used.
-     *
-     * @var array<string>|string
-     */
-    'jobPaths' => [
-        'app/Jobs',
-    ],
-
-    /**
-     * The output file that stores all doc block definitions.
-     *
-     * If prefixed with / it will be considered absolute, otherwise relative to base_path()
+     * The designated reader interface that the system should use when scanning for PHP files in the
+     * given directories. The reader is also responsible for resolving namespaces from the found
+     * PHP files as well as determining which classes match the constraints
+     *  - Extends - @see `ReaderInterface::classExtends()`
+     *  - Implements - @see `ReaderInterface::classImplements()`
+     *  - Traits - @see `ReaderInterface::classUses()`
      *
      * @var string
      */
-    'outputFile' => 'bootstrap/docwatch.php',
+    'reader' => \DocWatch\DocWatch\Reader\DefaultReader::class,
 
     /**
-     * Should this generator create proxied query builders?
-     *
-     * By default, intelephense won't be able to understand a model's relation query builder instance,
-     * for example: when calling `$category->products()` it only understands a few generic Builder
-     * class methods.
-     *
-     * With this enabled, the return type of the relations will remain as a standard Relation Builder
-     * instance, but intelephense will think it's actually ProxiedQueries\{ModelNamespace}\Builder
-     * which will provide docblocks to help intelephense understand the available scopes.
-     *
-     * Don't reference these proxied query builders in your code though, as they don't exist!
-     *
-     * @var boolean
-     */
-    'useProxiedQueryBuilders' => true,
-
-    /**
-     * This will convert the filemtime of the `outputFile` to the given timezone when the "last
-     * generated" timestamp is displayed in the `artisan about` command.
+     * The designated writer interface that the system should use when writing docblocks to the
+     * outputFile. The sribe is also responsible for dictating how to format classes, methods,
+     * properties and method arguments.
      *
      * @var string
      */
-    'timezone' => 'UTC',
+    'writer' => \DocWatch\DocWatch\Writer\DefaultWriter::class,
+
+    /**
+     * The designated output file path to write the dockblocks to.
+     *
+     * If prefixed with a slash it will be treated as an absolute path
+     * If not then:
+     *  - If Laravel application: this is relative to base_path()
+     *  - If not Laravel application: this is two directories up
+     *
+     * @var string
+     */
+    'outputFile' => 'bootstrap' . DIRECTORY_SEPARATOR . 'docwatch-generated.php',
 ];

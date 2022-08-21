@@ -1,245 +1,296 @@
 <?php
 
-namespace DocWatch;
+namespace DocWatch\DocWatch;
 
-use DocWatch\Objects\Model;
-use DocWatch\Objects\Event;
-use DocWatch\Objects\Job;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Bus as BusFacade;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB as DBFacade;
-use Illuminate\Support\Facades\Event as EventFacade;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Queue as QueueFacade;
-use Illuminate\Support\Facades\Storage as StorageFacade;
-use Illuminate\Support\Str;
-use SplFileInfo;
+use DocWatch\DocWatch\Parse\ParseInterface;
+use DocWatch\DocWatch\Reader\ReaderInterface;
+use DocWatch\DocWatch\Writer\WriterInterface;
+use ReflectionClass;
 
 class Generator
 {
-    public array $modelPaths = [];
+    /**
+     * Configuration cache
+     *
+     * @var array
+     */
+    public static array $config = [];
 
-    public array $eventPaths = [];
+    /**
+     * Stats - number of classes per type
+     *
+     * @var array
+     */
+    public static $stats = [];
 
-    public array $jobPaths = [];
-
-    public function __construct()
+    /**
+     * Constructor. Optionally pass in a configuration array to REPLACE the global configuration.
+     *
+     * @param array $config
+     */
+    public function __construct(array $config = [])
     {
-        // Ensure nothing is written to the database, no storage modifications are made, no events are fired, etc
-        DBFacade::beginTransaction();
-        StorageFacade::fake();
-        BusFacade::fake();
-        EventFacade::fake();
-        QueueFacade::fake();
+        static::$config = $config;
     }
 
     /**
-     * Create new generator instance
+     * Boot up the generation process
      *
      * @return static
      */
-    public static function instance()
+    public static function generate(): static
     {
-        return new static();
+        return (new static())->run();
     }
 
     /**
-     * Specify the directory or directories to read models from
+     * Determine if this application is a Laravel app.
      *
-     * @param array|string|null $modelPaths
-     * @return self
-     */
-    public function modelPaths(array|string $modelPaths = null)
-    {
-        $this->modelPaths = Arr::wrap(
-            $modelPaths ?? Config::get('docwatch.modelPaths', []),
-        );
-
-        return $this;
-    }
-
-    /**
-     * Specify the directory or directories to read models from
-     *
-     * @param array|string|null $eventPaths
-     * @return self
-     */
-    public function eventPaths(array|string $eventPaths = null)
-    {
-        $this->eventPaths = Arr::wrap(
-            $eventPaths ?? Config::get('docwatch.eventPaths', []),
-        );
-
-        return $this;
-    }
-
-    /**
-     * Specify the directory or directories to read models from
-     *
-     * @param array|string|null $jobPaths
-     * @return self
-     */
-    public function jobPaths(array|string $jobPaths = null)
-    {
-        $this->jobPaths = Arr::wrap(
-            $jobPaths ?? Config::get('docwatch.jobPaths', []),
-        );
-
-        return $this;
-    }
-
-    /**
-     * Get all models
-     *
-     * @param array|string|null $modelPaths
-     * @return Collection
-     */
-    public function models(array|string $modelPaths = null): Collection
-    {
-        $this->modelPaths($modelPaths);
-
-        $all = Collection::make($this->modelPaths)
-            ->map(fn (string $path) => Str::startsWith($path, '/') ? $path : base_path($path))
-            ->filter(fn (string $path) => is_dir($path))
-            ->map(function (string $directory) {
-                return Collection::make(scandir($directory))
-                    ->filter(fn ($model) => substr($model, -4) === '.php')
-                    ->map(fn ($filename) => $directory . DIRECTORY_SEPARATOR . $filename)
-                    ->map(fn ($path) => Model::createFromPath($path))
-                    ->filter(); // ignore those that failed validation (aren't models, aren't instantiable, etc)
-            })
-            ->collapse()
-            ->sortBy(fn (Model $model) => $model->namespace);
-
-        return $all;
-    }
-
-    /**
-     * Get all events
-     *
-     * @param array|string|null $eventPaths
-     * @return Collection
-     */
-    public function events(array|string $eventPaths = null): Collection
-    {
-        $this->eventPaths($eventPaths);
-
-        $all = Collection::make($this->eventPaths)
-            ->map(fn (string $path) => Str::startsWith($path, '/') ? $path : base_path($path))
-            ->filter(fn (string $path) => is_dir($path))
-            ->map(function (string $directory) {
-                return Collection::make(File::allFiles($directory))
-                    ->filter(fn (SplFileInfo $file) => $file->getExtension() === 'php')
-                    ->map(fn (SplFileInfo $file) => Event::createFromPath($file->getRealPath()))
-                    ->filter(); // ignore those that failed validation (aren't events, aren't instantiable, etc)
-            })
-            ->collapse()
-            ->sortBy(fn (Event $event) => $event->namespace);
-
-        return $all;
-    }
-
-    /**
-     * Get all jobs
-     *
-     * @param array|string|null $jobPaths
-     * @return Collection
-     */
-    public function jobs(array|string $jobPaths = null): Collection
-    {
-        $this->jobPaths($jobPaths);
-
-        $all = Collection::make($this->jobPaths)
-            ->map(fn (string $path) => Str::startsWith($path, '/') ? $path : base_path($path))
-            ->filter(fn (string $path) => is_dir($path))
-            ->map(function (string $directory) {
-                return Collection::make(File::allFiles($directory))
-                    ->filter(fn (SplFileInfo $file) => $file->getExtension() === 'php')
-                    ->map(fn (SplFileInfo $file) => Job::createFromPath($file->getRealPath()))
-                    ->filter(); // ignore those that failed validation (aren't jobs, aren't instantiable, etc)
-            })
-            ->collapse()
-            ->sortBy(fn (Job $job) => $job->namespace);
-
-        return $all;
-    }
-
-    /**
-     * Extract the full namespace of the given model by its path. This will iterate all lines
-     * until it finds a namespace definition line, and a class name line.
-     *
-     * @param string $path
-     * @return string|null
-     */
-    public static function extractFullNamespace(string $path): ?string
-    {
-        $f = fopen($path, 'r');
-
-        $namespace = null;
-        $class = null;
-
-        while (($line = fgets($f, 1000)) !== false) {
-            if (($namespace === null) && preg_match('/^namespace (.+);$/', $line, $m)) {
-                $namespace = $m[1];
-            }
-
-            if (($class === null) && preg_match('/^(?:readonly|abstract|final)?\s*class ([^ ]+)/', $line, $m)) {
-                $class = $m[1];
-
-                // Class comes after namespace so once we see this line, bail immediately
-                break;
-            }
-        }
-
-        fclose($f);
-
-        // We need both namespace and class or it's invalid
-        if ($namespace === null || $class === null) {
-            return null;
-        }
-
-        return $namespace . '\\' . $class;
-    }
-
-    /**
-     * Get the path of which the generated docblock file should be outputted to.
-     *
-     * @return string
-     */
-    public static function outputFile(): string
-    {
-        $path = Config::get('docwatch.outputFile', 'bootstrap/docwatch.php');
-        $path = Str::startsWith($path, '/') ? $path : base_path($path);
-
-        return $path;
-    }
-
-    /**
-     * Should this generate "proxied" query builders.
-     *
-     * A proxied query query builder is a virtual query builder class which
-     * only exists in docblock form to assist intelephense / intellisense
-     * understand what methods/scopes each query builder instance has
-     * access to. Proxied query builders cannot be used for hints
-     * nor can it be referenced in the codebase (e.g. checking
-     * for inheritance, instanceof, etc).
+     * To do this we're currently just checking if the Config facade exists
+     * and if the base_path function exists.
      *
      * @return boolean
      */
-    public static function useProxiedQueryBuilders(): bool
+    public static function isLaravel(): bool
     {
-        return Config::get('docwatch.useProxiedQueryBuilders', true);
+        return class_exists(\Illuminate\Support\Facades\Config::class) && function_exists('base_path');
     }
 
     /**
-     * Get the timezone of the developer, to be used in the `artisan about` command
+     * Read the configuration.
+     *
+     * If Laravel: This will read the config under the namespace "docwatch"
+     *  Otherwise: This will read the config straight from config/docwatch.php
+     *
+     * @return array
+     */
+    public static function config(): array
+    {
+        if (static::isLaravel()) {
+            static::$config = \Illuminate\Support\Facades\Config::get('docwatch', []);
+
+            // If it loaded config then don't load the plugin's default
+            if (!empty(static::$config)) {
+                return static::$config;
+            }
+        }
+
+        return static::$config = include __DIR__ . '/../config/docwatch.php';
+    }
+
+    /**
+     * Get the reader class
+     *
+     * @return ReaderInterface
+     */
+    public static function getReader(): ReaderInterface
+    {
+        $reader = static::config()['reader'];
+
+        return new $reader();
+    }
+
+    /**
+     * Get the writer class
+     *
+     * @return WriterInterface
+     */
+    public static function getWriter(): WriterInterface
+    {
+        $writer = static::config()['writer'];
+
+        return new $writer;
+    }
+
+    /**
+     * Get the output file
+     *
+     * If absolute: The output file is an absolute path
+     * If Laravel: The outputfile is relative to base_path()
+     * If not: The outputfile is relative to the parent parent directory.
      *
      * @return string
      */
-    public static function timezone(): string
+    public static function getOutputFile(): string
     {
-        return Config::get('docwatch.timezone', 'UTC');
+        return static::getFilePath(static::config()['outputFile']);
+    }
+
+    /**
+     * Get the output file path from the configuration
+     *
+     * @param string $file
+     * @return string
+     */
+    public static function getFilePath(string $file): string
+    {
+        // Check if the file is a relative link
+        if (substr($file, 0, 1) !== '/') {
+            if (static::isLaravel()) {
+                $file = base_path($file);
+            } else {
+                $file = dirname(dirname(__DIR__)) . '/' . $file;
+            }
+        }
+
+        return $file;
+    }
+
+    /**
+     * Get the rules to run
+     *
+     * @return array
+     */
+    public static function getRules(): array
+    {
+        return static::config()['rules'] ?? [];
+    }
+
+    /**
+     * Because this runs rudimentary code for analysis, such as instantiating models
+     * or relations, we need to ensure that the application is not going to do anything bad.
+     * 
+     * Some people do weird things in their apps like "on instantiation of a model, run a DB query"
+     * or something alike - obviously this is not a good idea - so we'll fake everything to ensure nothing is run
+     *
+     * @return void
+     */
+    public static function safety()
+    {
+        //
+    }
+
+    /**
+     * Run the generation process
+     *
+     * @return static
+     */
+    public function run(): static
+    {
+        static::safety();
+
+        $rules = static::getRules();
+
+        $docs = Docs::instance();
+        $reader = static::getReader();
+        $writer = static::getWriter();
+        $file = static::getOutputFile();
+
+        static::$stats = [];
+
+        // Extract docblocks from the rules
+
+        foreach ($rules as $rule) {
+            // Get the path or paths to read from
+            $path = $rule['path'] ?? null;
+            $path = array_map(
+                fn (string $path) => static::getFilePath($path),
+                (is_array($path)) ? $path : [$path]
+            );
+            $recursive = $rule['recursive'] ?? false;
+
+            // Get the parsers to use
+            $parsers = $rule['parsers'] ?? [];
+
+            // Get the type of class (for stats)
+            $type = $rule['type'] ?? 'misc';
+            static::$stats[$type] ??= [];
+
+            // If the path is not set then skip this rule
+            if (empty($path) || empty($parsers)) {
+                continue;
+            }
+
+            // Scan the given path (or paths) for PHP files
+            $files = $reader->scanDirectory($path, $recursive);
+
+            // Convert each PHP file path to a fully qualified namespace (if available)
+            $classes = array_map(
+                fn (string $path) => $reader->resolveClass($path),
+                (array) $files,
+            );
+
+            // Filter out any null namespaces (invalid files, etc)
+            $classes = array_filter($classes);
+
+            // Filter out any classes that don't extend the specified classes
+            if (!empty($extends = $rule['extends'] ?? null)) {
+                $extends = (is_array($extends)) ? $extends : [$extends];
+
+                // Forward the "does this class extend x class" check to the reader
+                $classes = array_filter(
+                    $classes,
+                    fn (string $class) => $reader->classExtends($class, $extends),
+                );
+            }
+
+            // Filter out any classes that don't implement the specified interfaces
+            if (!empty($implements = $rule['implements'] ?? null)) {
+                $implements = (is_array($implements)) ? $implements : [$implements];
+
+                // Forward the "does this class implement x interface" check to the reader
+                $classes = array_filter(
+                    $classes,
+                    fn (string $class) => $reader->classImplements($class, $implements),
+                );
+            }
+
+            // Filter out any classes that don't use the specified traits
+            if (!empty($traits = $rule['traits'] ?? null)) {
+                $traits = (is_array($traits)) ? $traits : [$traits];
+
+                // Forward the "does this class use x trait" check to the reader
+                $classes = array_filter(
+                    $classes,
+                    fn (string $class) => $reader->classUses($class, $traits),
+                );
+            }
+
+            // Continue if there are no classes to process
+            if (empty($classes)) {
+                continue;
+            }
+
+            // Run each parser
+
+            foreach ($parsers as $parser => $config) {
+                // If the key is an integer then the value is the parser classname
+                if (is_int($parser)) {
+                    $parser = $config;
+                    $config = [];
+                }
+
+                // continue if the class does not exist
+                if (!class_exists($parser)) {
+                    continue;
+                }
+
+                // continue if the class does not implement the parser interface
+                if (!in_array(ParseInterface::class, class_implements($parser))) {
+                    continue;
+                }
+
+                // Create an instance of the parser
+                $parser = new $parser();
+                /** @var ParseInterface $parser */
+
+                foreach ($classes as $class) {
+                    $parser->parse($docs, new ReflectionClass($class), $config);
+
+                    static::$stats[$type][$class] = true;;
+                }
+            }
+        }
+
+        // Write the docs to the output file
+        $writer->open($file, $docs);
+        try {
+            $writer->write($file, $docs);
+        } catch (\Throwable $e) {
+        } finally {
+            $writer->close($file, $docs);
+        }
+
+        return $this;
     }
 }

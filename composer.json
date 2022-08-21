@@ -1,22 +1,25 @@
 {
     "name": "docwatch/docwatch",
-    "description": "An IDE Helper for Laravel apps that generates automatic doc blocks for your models",
+    "description": "Automatically generate magic docblocks for your magic PHP classes",
+    "type": "library",
     "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "DocWatch\\DocWatch\\": "src/"
+        }
+    },
     "authors": [
         {
             "name": "Bradie Tilley",
-            "email": "bradie@hatchet.com.au"
+            "homepage": "https://github.com/bradietilley"
         }
     ],
-    "autoload": {
-        "psr-4": {
-            "DocWatch\\": "src/"
-        }
-    },
+    "minimum-stability": "dev",
+    "require": {},
     "extra": {
         "laravel": {
             "providers": [
-                "DocWatch\\ServiceProvider"
+                "DocWatch\\DocWatch\\Laravel\\ServiceProvider"
             ]
         }
     }

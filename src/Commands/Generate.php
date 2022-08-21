@@ -1,69 +1,66 @@
 <?php
 
-namespace DocWatch\Commands;
+namespace DocWatch\DocWatch\Commands;
 
+use DocWatch\DocWatch\Docs;
+use DocWatch\DocWatch\Generator;
 use Illuminate\Console\Command;
-use DocWatch\Generator;
-use DocWatch\Objects\AbstractObject;
-use DocWatch\Objects\Model;
-use DocWatch\Objects\Event;
-use DocWatch\Objects\Job;
-use DocWatch\Objects\ModelQueryBuilder;
+use Illuminate\Support\Str;
 
+/**
+ * @requires Laravel
+ */
 class Generate extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'docwatch:generate';
+    public $signature = 'docwatch:generate';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Generate doc blocks for all your models and events';
-
-    /**
-     * Execute the console command.
-     *
-     * @return int
-     */
     public function handle()
     {
-        $separator = "\n\n\n";
+        $this->newLine();
+        $start = microtime(1);
+        $this->line('Doc Watch generating...');
 
-        // Get the docblock models
-        $models = Generator::instance()->models()->sortBy(fn (Model $model) => $model->namespace);
+        Generator::generate();
+        $end = microtime(1);
+        $this->info('Doc Watch generated successfully in ' . round($end - $start, 2) . ' seconds');
 
-        // Get the docblock events
-        $events = Generator::instance()->events()->sortBy(fn (Event $event) => $event->namespace);
+        $this->newLine();
+        $docs = Docs::instance();
 
-        // Get the docblock jobs
-        $jobs = Generator::instance()->jobs()->sortBy(fn (Job $job) => $job->namespace);
+        $classes = count(array_keys($docs->container));
+        $methods = collect($docs->container)->sum(fn (array $class) => count($class['method'] ?? []));
+        $properties = collect($docs->container)->sum(fn (array $class) => count($class['property'] ?? []));
 
-        // Get the docblock query builders
-        $builders = collect();
+        $this->fixedLine('No. of Classes', $classes);
+        $this->fixedLine('     - Methods', $methods);
+        $this->fixedLine('     - Properties', $properties);
+        $this->fixedLine('     - Rules Run', count(Generator::getRules()));
 
-        if (Generator::useProxiedQueryBuilders()) {
-            // Find models with scopes
-            $builders = $models->filter(fn (Model $model) => $model->scopes->isNotEmpty())
-                ->map(fn (Model $model) => new ModelQueryBuilder($model, $model->scopes));
+        foreach (Generator::$stats as $type => $number) {
+            $this->fixedLine('     - ' . Str::plural(Str::title($type)), count($number));
         }
 
-        $docs = collect([
-            $models,
-            $events,
-            $jobs,
-            $builders,
-        ])
-            ->collapse()
-            ->map(fn (AbstractObject $object) => (string) $object)
-            ->implode($separator);
+        $this->newLine();
+        $this->fixedLine('Output path', Generator::getOutputFile(), valueColor: 'white');
+        $this->fixedLine('File size', static::humanBytes(filesize(Generator::getOutputFile())), valueColor: 'bright-green');
+    }
 
-        // Write the docblocks
-        file_put_contents(Generator::outputFile(), "<?php\n" . $docs);
+    public function fixedLine(
+        string $key,
+        string|int $value,
+        string $keyColor = 'bright-magenta',
+        string $valueColor = 'bright-cyan'
+    ) {
+        $this->line(
+            str_pad("<fg={$keyColor}>$key</> <fg=gray>", 80 - strlen($keyColor), '.') . "</> <fg={$valueColor}>{$value}</>",
+        );
+    }
+
+    public static function humanBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        $power = $bytes > 0 ? floor(log($bytes, 1024)) : 0;
+
+        return number_format($bytes / pow(1024, $power), 2, '.', ',') . ' ' . $units[$power];
     }
 }
