@@ -35,10 +35,12 @@ return [
                 \DocWatch\DocWatch\Parse\DocblockPropertyOverrides::class => [
                     'property' => true,
                     'class' => true,
+                    'delete' => true,
                 ],
                 \DocWatch\DocWatch\Parse\DockblockMethodOverrides::class => [
                     'method' => true,
                     'class' => true,
+                    'delete' => true,
                 ],
             ],
         ],

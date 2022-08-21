@@ -28,6 +28,13 @@ class DocblockMethodOverrides implements ParseInterface
     {
         $ran = false;
 
+        /**
+         * If delete mode is enabled, it will delete all existing docblocks that DocWatch has generated for the given
+         * methods. This is helpful for when you want to inherit the docblocks from the parent class verbatim without
+         * any overides from DocWatch.
+         */
+        $delete = $config['delete'] ?? false;
+
         // Should we look at the class's docblocks?
         if ($config['class'] ?? false) {
             $docblocks = new Docblock($class);
@@ -46,6 +53,7 @@ class DocblockMethodOverrides implements ParseInterface
                     $class->getName(),
                     $tag,
                     replace: true,
+                    delete: $delete,
                 );
 
                 $ran = true;

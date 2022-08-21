@@ -63,10 +63,17 @@ class DatabaseColumnsAsProperties implements ParseInterface
                 $type = Str::afterLast($line, ' ');
                 $nullable = Str::contains(Str::after($line, ' '), 'nullable');
 
+                $type = [
+                    $type,
+                ];
+
+                if ($nullable) {
+                    $type[] = 'null';
+                }
+
                 return [
                     'name' => $name,
                     'type' => $type,
-                    'nullable' => $nullable,
                 ];
             })
             ->filter(fn (array $data) => !empty($data['name']));

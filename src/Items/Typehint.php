@@ -2,6 +2,7 @@
 
 namespace DocWatch\DocWatch\Items;
 
+use DocWatch\DocWatch\Generator;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
 use ReflectionType;
@@ -22,7 +23,7 @@ class Typehint implements Stringable
         'date' => 'datetime',
         'decimal' => 'float',
         'double' => 'float',
-        'enum' => 'casts:string',
+        'enum' => 'mixed',
         'float' => 'float',
         'foreignid' => 'integer',
         'foreignidfor' => 'string',
@@ -76,6 +77,10 @@ class Typehint implements Stringable
         'uuidmorphs' => 'string',
         'uuid' => 'string',
         'year' => 'integer',
+    ];
+
+    public const LARAVEL_TYPES = [
+        'datetime' => \Carbon\Carbon::class,
     ];
 
     /** @var string Regex used to identify and extract any generics */
@@ -212,6 +217,10 @@ class Typehint implements Stringable
 
             //  Convert db types to docblock types
             $type = static::TYPES[$type] ?? $type;
+
+            if (Generator::isLaravel()) {
+                $type = static::LARAVEL_TYPES[$type] ?? $type;
+            }
         }
 
         // Typically class names:
@@ -265,5 +274,15 @@ class Typehint implements Stringable
     public static function mixedVoid()
     {
         return new static('mixed|void');
+    }
+
+    /**
+     * Does this typehint suggest the value is nullable?
+     *
+     * @return bool
+     */
+    public function isNullable(): bool
+    {
+        return in_array('null', explode('|', $this->types), true);
     }
 }

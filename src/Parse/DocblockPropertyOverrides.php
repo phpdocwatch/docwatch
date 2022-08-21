@@ -12,12 +12,7 @@ use ReflectionProperty;
 class DocblockPropertyOverrides implements ParseInterface
 {
     /**
-     * Parse the given $class for the configured source method and destination methods, then
-     * clone the arguments from the source method to the destination methods.
-     *
-     * E.g:    __construct($a, $b, $c) and static dispatchIf($boolean, ...$arguments)
-     *
-     * Result: static dispatchIf($boolean, $a, $b, $c)
+     * Inherit the docblocks for properties from the $class.
      *
      * @param Docs $docs
      * @param WriterInterface $writer
@@ -28,6 +23,13 @@ class DocblockPropertyOverrides implements ParseInterface
     public function parse(Docs $docs, ReflectionClass $class, array $config): bool
     {
         $ran = false;
+
+        /**
+         * If delete mode is enabled, it will delete all existing docblocks that DocWatch has generated for the given
+         * properties. This is helpful for when you want to inherit the docblocks from the parent class verbatim without
+         * any overides from DocWatch.
+         */
+        $delete = $config['delete'] ?? false;
 
         // Should we look at the class's docblocks?
         if ($config['class'] ?? false) {
@@ -47,6 +49,7 @@ class DocblockPropertyOverrides implements ParseInterface
                     $class->getName(),
                     $tag,
                     replace: true,
+                    delete: $delete,
                 );
 
                 $ran = true;
@@ -74,6 +77,7 @@ class DocblockPropertyOverrides implements ParseInterface
                         $class->getName(),
                         $tag,
                         replace: true,
+                        delete: $delete,
                     );
 
                     $ran = true;

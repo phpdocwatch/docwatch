@@ -28,11 +28,18 @@ class Docs
      * @param DocblockTag|null $tag The tag to add
      * @param array $class Information about the class, e.g. extends, implements, etc.
      * @param bool $replace should this replace an existing definition if there is one?
+     * @param bool $delete should this delete an existing definition if there is one? Supersedes $replace
      * @return static
      */
-    public function addDocblock(string $classNamespace, DocblockTag|null $tag = null, array $class = [], bool $replace = true): static
+    public function addDocblock(string $classNamespace, DocblockTag|null $tag = null, array $class = [], bool $replace = true, bool $delete = false): static
     {
         $this->container[$classNamespace] ??= [];
+
+        if ($delete) {
+            unset($this->container[$classNamespace][$tag->type][$tag->name]);
+
+            return $this;
+        }
 
         if ($tag !== null) {
             $this->container[$classNamespace][$tag->type] ??= [];
