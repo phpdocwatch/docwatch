@@ -116,6 +116,20 @@ return [
                 ],
             ],
         ],
+        [
+            'path' => 'app' . DIRECTORY_SEPARATOR . 'Providers',
+            'type' => 'macro',
+            'extends' => \Illuminate\Support\ServiceProvider::class,
+            'parsers' => [
+                \DocWatch\DocWatch\Parse\Laravel\MacrosAsMethods::class => [
+                    'method' => 'macro',
+                    'macroable' => [
+                        \Illuminate\Support\Traits\Macroable::class,
+                        \Carbon\Traits\Macro::class,
+                    ],
+                ],
+            ],
+        ],
     ],
 
     /**

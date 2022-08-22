@@ -149,7 +149,7 @@ class Generator
     /**
      * Because this runs rudimentary code for analysis, such as instantiating models
      * or relations, we need to ensure that the application is not going to do anything bad.
-     * 
+     *
      * Some people do weird things in their apps like "on instantiation of a model, run a DB query"
      * or something alike - obviously this is not a good idea - so we'll fake everything to ensure nothing is run
      *
