@@ -14,7 +14,7 @@ return [
      */
     'rules' => [
         [
-            'path' => 'app' . DIRECTORY_SEPARATOR . 'Models',
+            'path' => 'app/Models',
             'type' => 'model',
             'extends' => \Illuminate\Database\Eloquent\Model::class,
             'parsers' => [
@@ -45,7 +45,7 @@ return [
             ],
         ],
         [
-            'path' => 'app' . DIRECTORY_SEPARATOR . 'Events',
+            'path' => 'app/Events',
             'type' => 'event',
             'traits' => \Illuminate\Foundation\Events\Dispatchable::class,
             'parsers' => [
@@ -65,7 +65,7 @@ return [
             ],
         ],
         [
-            'path' => 'app' . DIRECTORY_SEPARATOR . 'Jobs',
+            'path' => 'app/Jobs',
             'type' => 'job',
             'traits' => \Illuminate\Foundation\Bus\Dispatchable::class,
             'parsers' => [
@@ -101,7 +101,7 @@ return [
          *      CommandName::dispatchNow($user->id, $date->format('Y-m-d'), (string) $message);
          */
         [
-            'path' => 'app' . DIRECTORY_SEPARATOR . 'Console' . DIRECTORY_SEPARATOR . 'Commands',
+            'path' => 'app/Console/Commands',
             'type' => 'command',
             'extends' => [
                 \Illuminate\Console\Command::class,
@@ -117,7 +117,7 @@ return [
             ],
         ],
         [
-            'path' => 'app' . DIRECTORY_SEPARATOR . 'Providers',
+            'path' => 'app/Providers',
             'type' => 'macro',
             'extends' => \Illuminate\Support\ServiceProvider::class,
             'parsers' => [
@@ -163,5 +163,5 @@ return [
      *
      * @var string
      */
-    'outputFile' => 'bootstrap' . DIRECTORY_SEPARATOR . 'docwatch-generated.php',
+    'outputFile' => 'bootstrap/docwatch-generated.php',
 ];
