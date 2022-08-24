@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 /**
  * @requires Laravel
  */
-class DatabaseColumnsAsProperties implements ParseInterface
+class DatabaseColumnsAsProperties extends AbstractModelShowDataParser
 {
     public function parse(Docs $docs, ReflectionClass $class, array $config): bool
     {
@@ -26,59 +26,9 @@ class DatabaseColumnsAsProperties implements ParseInterface
             return false;
         }
 
-        Artisan::call($config['command'] ?? 'db:table', [
-            'table' => $model->getTable(),
-        ]);
+        $data = static::parseModel($model);
 
-        $foundColumn = false;
-        $foundIndex = false;
-
-        $columns = collect(preg_split('/\n+/', Artisan::output()))
-            ->filter(function ($row) use (&$foundColumn, &$foundIndex) {
-                $row = trim($row);
-                $start = Str::before($row, ' ');
-
-                if ($start === 'Column') {
-                    $foundColumn = true;
-
-                    return false;
-                }
-
-                if ($foundColumn === true && $foundIndex === false) {
-                    if ($start === 'Index') {
-                        $foundIndex = true;
-
-                        return false;
-                    }
-
-                    return true;
-                }
-
-                return false;
-            })
-            ->map(function (string $line) {
-                $line = trim($line);
-
-                $name = Str::before($line, ' ');
-                $type = Str::afterLast($line, ' ');
-                $nullable = Str::contains(Str::after($line, ' '), 'nullable');
-
-                $type = [
-                    $type,
-                ];
-
-                if ($nullable) {
-                    $type[] = 'null';
-                }
-
-                return [
-                    'name' => $name,
-                    'type' => $type,
-                ];
-            })
-            ->filter(fn (array $data) => !empty($data['name']));
-
-        foreach ($columns as $data) {
+        foreach ($data['attributes'] as $data) {
             // Create a new DocblockTag for this class + method
             $docs->addDocblock(
                 $class->getName(),
@@ -94,6 +44,6 @@ class DatabaseColumnsAsProperties implements ParseInterface
             );
         }
 
-        return $columns->isNotEmpty();
+        return !empty($data['attributes']);
     }
 }

@@ -7,7 +7,6 @@ use DocWatch\DocWatch\DocblockTag;
 use DocWatch\DocWatch\Docs;
 use DocWatch\DocWatch\Items\Typehint;
 use DocWatch\DocWatch\Parse\ParseInterface;
-use DocWatch\DocWatch\Writer\WriterInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,7 +30,7 @@ use ReflectionMethod;
 /**
  * @requires Laravel
  */
-class RelationsAsProperties implements ParseInterface
+class RelationsAsProperties extends AbstractModelShowDataParser
 {
     /**
      * Map of which relations have "many" related entities and will return a Collection
@@ -96,70 +95,6 @@ class RelationsAsProperties implements ParseInterface
         EloquentRelation::class => false,
     ];
 
-    /**
-     * Get all relations from the given model class
-     *
-     * @param ReflectionClass $class
-     * @return Collection<ReflectionMethod>
-     */
-    public static function getRelations(ReflectionClass $class): Collection
-    {
-        return collect($class->getMethods())
-            ->filter(function (ReflectionMethod $method) {
-                if ($type = $method->getReturnType()) {
-                    return \is_subclass_of($type->getName(), Relation::class);
-                }
-
-                return false;
-            });
-    }
-
-    /**
-     * Parse the relation's details
-     *
-     * @param Model $model
-     * @param ReflectionMethod $method
-     * @return array
-     */
-    public static function parseRelation(Model $model, ReflectionMethod $method): array
-    {
-        /** @var ReflectionMethod $method */
-        $returnModel = Model::class;
-        $hasModel = false;
-        $hasMany = false;
-        $type = false;
-        $name = $method->getName();
-
-        try {
-            $relation = $model->{$name}();
-
-            foreach (static::HAS_MANY_TYPES as $type => $hasMany) {
-                // If the relation matches, or is a subclass of, then...
-                if (($relation instanceof $type) || is_subclass_of($relation, $type)) {
-                    // ... we've found the type, so get the $hasModel definition too
-                    $hasModel = static::HAS_MODEL_TYPES[$type];
-
-                    // and break out, leaving "$hasMany" and "$type" variables as the source of truth
-                    break;
-                }
-            }
-
-            if ($hasModel) {
-                /** @var Relation $relation */
-                $returnModel = get_class($relation->getQuery()->getModel());
-            }
-        } catch (\Exception $e) {
-        }
-
-        return [
-            'name' => $name,
-            'type' => $type,
-            'hasMany' => $hasMany,
-            'hasModel' => $hasModel,
-            'returnModel' => $returnModel,
-        ];
-    }
-
     public function parse(Docs $docs, ReflectionClass $class, array $config): bool
     {
         /** @var Model|null $model */
@@ -169,30 +104,47 @@ class RelationsAsProperties implements ParseInterface
             return false;
         }
 
-        $relations = static::getRelations($class);
+        $data = static::parseModel($model);
 
-        foreach ($relations as $method) {
-            $relation = static::parseRelation($model, $method);
+        foreach ($data['relations'] as $method) {
+            $type = $method['traits'][0] ?? Relation::class;
 
-            if ($relation['hasMany']) {
-                $relation['returnModel'] = sprintf('\\Illuminate\\Support\\Collection<\\%s>', $relation['returnModel']);
+            if (!class_exists($type)) {
+                $type = 'Illuminate\\Database\\Eloquent\\Relations\\' . $type;
             }
+
+            $returnOne = ($method['type'][0] ?? $class->getName());
+            $hasMany = static::HAS_MANY_TYPES[$type] ?? null;
+
+            $returnMany = implode('', [
+                '\\',
+                Collection::class,
+                '<',
+                $returnOne,
+                '>',
+            ]);
+
+            $returnValue = match ($hasMany) {
+                true => $returnMany,
+                false => $returnOne,
+                null => $returnOne . '|' . $returnMany,
+            };
 
             // Create a new DocblockTag for this class + method
             $docs->addDocblock(
                 $class->getName(),
                 new DocblockTag(
                     'property',
-                    $relation['name'],
+                    $method['name'],
                     new PropertyDocblock(
-                        $relation['name'],
-                        new Typehint($relation['returnModel']),
+                        $method['name'],
+                        new Typehint($returnValue),
                         comments: ['from:RelationsAsProperties'],
                     )
                 )
             );
         }
 
-        return $relations->isNotEmpty();
+        return !empty($data['relations']);
     }
 }
