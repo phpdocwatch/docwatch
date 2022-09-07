@@ -21,6 +21,7 @@ return [
                 \DocWatch\DocWatch\Parse\Laravel\DatabaseColumnsAsProperties::class => [
                     'command' => 'db:table',
                 ],
+                \DocWatch\DocWatch\Parse\Laravel\CastsAsProperties::class => [],
                 \DocWatch\DocWatch\Parse\Laravel\RelationsAsProperties::class => [
                     'except' => [],
                 ],
