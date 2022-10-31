@@ -1,0 +1,32 @@
+{
+    "class": "App\\Models\\ProductCategory",
+    "database": "mysql",
+    "table": "product_categories",
+    "attributes": [
+        {
+            "name": "product_id",
+            "type": "integer unsigned",
+            "increments": false,
+            "nullable": false,
+            "default": null,
+            "unique": false,
+            "fillable": true,
+            "hidden": false,
+            "appended": null,
+            "cast": null
+        },
+        {
+            "name": "category_id",
+            "type": "integer unsigned",
+            "increments": false,
+            "nullable": false,
+            "default": null,
+            "unique": false,
+            "fillable": true,
+            "hidden": false,
+            "appended": null,
+            "cast": null
+        }
+    ],
+    "relations": []
+}

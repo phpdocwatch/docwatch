@@ -1,82 +1,121 @@
 <?php
 
-namespace DocWatch\DocWatch;
+namespace DocWatch;
 
-/**
- * A singleton class for managing all docblock tags to generate
- */
-class Docs
+use Stringable;
+
+class Docs implements Stringable
 {
-    /**
-     * The Singleton instance
-     *
-     * @var Docs|null
-     */
-    public static ?Docs $instance = null;
+    public array $items = [];
 
-    /**
-     * The container for the docblocks.
-     *
-     * @var array
-     */
-    public $container = [];
+    public function __construct(
+        array $docs = []
+    ) {
+        $this->set($docs);
+    }
 
-    /**
-     * Add a docblock to the container
-     *
-     * @param string $classNamespace
-     * @param DocblockTag|null $tag The tag to add
-     * @param array $class Information about the class, e.g. extends, implements, etc.
-     * @param bool $replace should this replace an existing definition if there is one?
-     * @param bool $delete should this delete an existing definition if there is one? Supersedes $replace
-     * @return static
-     */
-    public function addDocblock(string $classNamespace, DocblockTag|null $tag = null, array $class = [], bool $replace = true, bool $delete = false): static
+    public function compile(): string
     {
-        $this->container[$classNamespace] ??= [];
+        return $this->__toString();
+    }
 
-        if ($delete) {
-            unset($this->container[$classNamespace][$tag->type][$tag->name]);
+    public function __toString(): string
+    {
+        $docs = [];
+        $namespaces = [];
 
-            return $this;
+        foreach ($this->items as $doc) {
+            $namespaces[$doc->namespace] ??= [];
+            $namespaces[$doc->namespace][] = $doc;
         }
 
-        if ($tag !== null) {
-            $this->container[$classNamespace][$tag->type] ??= [];
+        foreach ($namespaces as $namespace => $items) {
+            $parentNamespace = substr($namespace, 0, strrpos($namespace, '\\'));
+            $childNamespace = substr($namespace, strrpos($namespace, '\\') + 1);
 
-            // If this tag already exists and we shouldn't replace, then ignore it
-            if (($replace === false) && isset($this->container[$classNamespace][$tag->type][$tag->name])) {
-                return $this;
-            }
-
-            // Otherwise set it
-            $this->container[$classNamespace][$tag->type][$tag->name] = $tag;
-        } else {
-            // If the class definition already exists and we shouldn't replace, then ignore it
-            if (($replace === false) && isset($this->container[$classNamespace]['class'])) {
-                return $this;
-            }
-
-            $this->container[$classNamespace]['class'] = array_replace(
-                $this->container[$classNamespace]['class'] ?? [],
-                $class,
-            );
+            $docs[] = sprintf('namespace %s;', $parentNamespace);
+            $docs[] = '/**';
+            $docs[] = ' * ' . implode("\n * ", $items);
+            $docs[] = ' */';
+            $docs[] = sprintf('class %s%s{%s}', $childNamespace, PHP_EOL, PHP_EOL);
+            $docs[] = "\n\n\n";
         }
+
+        return trim(implode("\n", $docs));
+    }
+
+    public function set(iterable $docs): self
+    {
+        foreach ($docs as $doc) {
+            $this->push($doc);
+        }
+        
+        return $this;
+    }
+
+    public function push(Doc $doc): self
+    {
+        $this->items[] = $doc;
 
         return $this;
     }
 
     /**
-     * Get the instance for this class.
-     *
-     * @return static
+     * Get this Docs class, or null if empty
      */
-    public static function instance(): static
+    public function orNull(): ?Docs
     {
-        if (static::$instance === null) {
-            static::$instance = new static();
+        return $this->items ? $this : null;
+    }
+
+    /**
+     * Merge two docs together
+     */
+    public function merge(Docs|Doc|null $docs = null): self
+    {
+        if ($docs === null) {
+            return $this;
         }
 
-        return static::$instance;
+        if ($docs instanceof Doc) {
+            $docs = new Docs([
+                $docs,
+            ]);
+        }
+
+        $this->items = array_merge(
+            $this->items,
+            $docs->items,
+        );
+
+        return $this;
+    }
+
+    /**
+     * Remove duplicate docs by namespace, type and name. If multiple exist,
+     * the more recently added one will be kept.
+     */
+    public function trim(): self
+    {
+        $unique = [];
+
+        foreach ($this->items as $doc) {
+            /** @var Doc $doc */
+            $key = implode('|', [$doc->namespace, $doc->type, $doc->name]);
+
+            $unique[$key] = $doc;
+        }
+
+        $this->items = array_values($unique);
+
+        return $this;
+    }
+
+    public function forClass(string $class): array
+    {
+        return array_filter(
+            $this->items,
+            fn (Doc $doc) => $doc->namespace === $class,
+        );
     }
 }

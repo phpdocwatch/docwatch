@@ -1,0 +1,1 @@
+This is used for faking Laravel without pulling in a million dependencies

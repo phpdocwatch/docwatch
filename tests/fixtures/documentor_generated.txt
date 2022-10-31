@@ -1,0 +1,89 @@
+namespace App\Models;
+/**
+ * @property int $net_likes // [via AccessorsAsProperties]::getNetLikesAttribute()
+ * @property string|null $preview // [via AccessorsAsProperties]::preview()
+ * @property integer $id // [via ColumnsAsProperties]
+ * @property string $commentable_type // [via ColumnsAsProperties]
+ * @property integer $commentable_id // [via ColumnsAsProperties]
+ * @property bool $approved // [via ColumnsAsProperties]
+ * @property string $comment // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon|null $created_at // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon|null $updated_at // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon $approved_at // [via CastsAsProperties]
+ * @method static \Database\Factories\CommentFactory factory(array $attributes = [], int $count = 1) // [via ModelHasFactoryReturnsFactoryClass]
+ * @property \Illuminate\Database\Eloquent\Model $commentable // [via RelationsAsProperties]
+ */
+class Comment
+{
+}
+
+
+
+
+namespace App\Models;
+/**
+ * @property integer $id // [via ColumnsAsProperties]
+ * @property string $name // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon $established // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon|null $created_at // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon|null $updated_at // [via ColumnsAsProperties]
+ * @property array $meta // [via CastsAsProperties]
+ * @method static \Database\Factories\BrandFactory factory(array $attributes = [], int $count = 1) // [via ModelHasFactoryReturnsFactoryClass]
+ * @property \App\Models\Product|null $firstProduct // [via RelationsAsProperties]
+ * @property \Illuminate\Support\Collection<int,\App\Models\Product> $products // [via RelationsAsProperties]
+ * @property \Illuminate\Support\Collection<int,\App\Models\Comment> $comments // [via RelationsAsProperties]
+ * @method static \Illuminate\Database\Eloquent\Builder establishedRecently() // [via ScopesAsMethods]
+ * @method static \Illuminate\Database\Eloquent\Builder establishedAround(\Carbon\Carbon $year) // [via ScopesAsMethods]
+ * @method static array asList(string $label = "name", string $id = "id") // [via ScopesAsMethods]
+ */
+class Brand
+{
+}
+
+
+
+
+namespace App\Models;
+/**
+ * @property integer $id // [via ColumnsAsProperties]
+ * @property string $name // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon|null $created_at // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon|null $updated_at // [via ColumnsAsProperties]
+ * @method static \Database\Factories\CategoryFactory factory(array $attributes = [], int $count = 1) // [via ModelHasFactoryReturnsFactoryClass]
+ * @property \Illuminate\Support\Collection<int,\App\Models\Product> $products // [via RelationsAsProperties]
+ * @property \Illuminate\Support\Collection<int,\App\Models\Comment> $comments // [via RelationsAsProperties]
+ */
+class Category
+{
+}
+
+
+
+
+namespace App\Models;
+/**
+ * @property integer $id // [via ColumnsAsProperties]
+ * @property string $sku // [via ColumnsAsProperties]
+ * @property string $name // [via ColumnsAsProperties]
+ * @property integer $brand_id // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon|null $created_at // [via ColumnsAsProperties]
+ * @property \Carbon\Carbon|null $updated_at // [via ColumnsAsProperties]
+ * @method static \Database\Factories\ProductFactory factory(array $attributes = [], int $count = 1) // [via ModelHasFactoryReturnsFactoryClass]
+ * @property \Illuminate\Support\Collection<int,\App\Models\Category> $categories // [via RelationsAsProperties]
+ * @property \App\Models\Brand|null $brand // [via RelationsAsProperties]
+ * @property \Illuminate\Support\Collection<int,\App\Models\Comment> $comments // [via RelationsAsProperties]
+ */
+class Product
+{
+}
+
+
+
+
+namespace App\Models;
+/**
+ * @method static \Database\Factories\ProductCategoryFactory factory(array $attributes = [], int $count = 1) // [via ModelHasFactoryReturnsFactoryClass]
+ */
+class ProductCategory
+{
+}

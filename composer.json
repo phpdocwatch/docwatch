@@ -1,11 +1,11 @@
 {
     "name": "docwatch/docwatch",
-    "description": "Automatically generate magic docblocks for your magic PHP classes",
+    "description": "A tool for creating docblocks for your PHP classes that use magic like Laravel",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "DocWatch\\DocWatch\\": "src/"
+            "DocWatch\\": "src/"
         }
     },
     "authors": [
@@ -15,11 +15,18 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {},
+    "require-dev": {
+        "pestphp/pest": "^1.22"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [
-                "DocWatch\\DocWatch\\Laravel\\ServiceProvider"
+                "DocWatch\\Laravel\\DocWatchServiceProvider"
             ]
         }
     }
