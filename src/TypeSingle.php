@@ -22,6 +22,8 @@ class TypeSingle implements Stringable
         'void',
         'null',
         'never',
+        'self',
+        'static',
     ];
 
     public TypeSingle|null $genericsKey = null;

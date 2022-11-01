@@ -11,8 +11,8 @@ namespace Illuminate\Database\Eloquent;
 /**
  * @method static \Illuminate\Database\Eloquent\Builder withoutGlobalScopes(array|null \$scopes = null) // [via ModelsExposeQueryBuilderMethods]
  * @method static \Illuminate\Database\Eloquent\Builder whereKey(\$id) // [via ModelsExposeQueryBuilderMethods]
- * @method static \Illuminate\Database\Eloquent\Builder find(\$id, \$columns = ["*"]) // [via ModelsExposeQueryBuilderMethods]
- * @method static \Illuminate\Database\Eloquent\Builder findOrFail(\$id, \$columns = ["*"]) // [via ModelsExposeQueryBuilderMethods]
+ * @method static static|null find(\$id, \$columns = ["*"]) // [via ModelsExposeQueryBuilderMethods]
+ * @method static static findOrFail(\$id, \$columns = ["*"]) // [via ModelsExposeQueryBuilderMethods]
  * @method static \Illuminate\Database\Eloquent\Builder testMethod() // [via ModelsExposeQueryBuilderMethods]
  */
 class Model

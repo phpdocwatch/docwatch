@@ -20,14 +20,18 @@ class CastsAsProperties extends AbstractLaravelParser
         $docs = new Docs();
         $instance = $file->instance();
         $data = static::getModelData($file->namespace);
-        $fields = collect($data['attributes'] ?? []);
+
+        $fields = [];
+        foreach ($data['attributes'] ?? [] as $attribute) {
+            $fields[$attribute['name']] = $attribute;
+        }
 
         foreach ($instance->getCasts() as $property => $type) {
             $type = [
                 $type,
             ];
 
-            $field = $fields->firstWhere('name', $property);
+            $field = $fields[$property] ?? [];
             
             if ($field['nullable'] ?? false) {
                 $type[] = 'null';

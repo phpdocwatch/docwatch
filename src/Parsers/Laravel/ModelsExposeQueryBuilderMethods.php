@@ -7,6 +7,7 @@ use DocWatch\File;
 use DocWatch\Doc;
 use DocWatch\Docs;
 use DocWatch\TypeMultiple;
+use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -37,27 +38,53 @@ class ModelsExposeQueryBuilderMethods extends AbstractLaravelParser
         );
         $builderReturn = TypeMultiple::parse($builder);
 
+        $nonBuilderMethods = [
+            'make' => ['static'],
+            'firstWhere' => ['static', 'null'],
+            'find' => ['static', 'null'],
+            'findOrNew' => ['static'],
+            'findOr' => ['static', 'mixed'],
+            'findOrFail' => ['static'],
+            'firstOrNew' => ['static'],
+            'firstOrCreate' => ['static'],
+            'updateOrCreate' => ['static'],
+            'firstOr' => ['static', 'mixed'],
+            'firstOrFail' => ['static'],
+            'create' => ['static'],
+            'forceCreate' => ['static'],
+            'newModelInstance' => ['static'],
+            'getModel' => ['static'],
+        ];
+
         $clone = (new \ReflectionClass($builder))->getMethods();
 
         foreach ($clone as $method) {
-            if (in_array($method->getName(), $ignore)) {
+            $name = $method->getName();
+
+            if (in_array($name, $ignore)) {
                 continue;
             }
 
-            if (substr($method->getName(), 0, 2) === '__') {
+            if (substr($name, 0, 2) === '__') {
                 continue;
+            }
+
+            $returnType = $method->hasReturnType()
+                ? TypeMultiple::parse($method->getReturnType())
+                : $builderReturn;
+
+            if (isset($nonBuilderMethods[$name])) {
+                $returnType = TypeMultiple::parse($nonBuilderMethods[$name]);
             }
 
             $docs->push(
                 new Doc(
                     $model,
                     'method',
-                    $method->getName(),
+                    $name,
                     isStatic: true,
                     schemaArgs: ArgumentList::parse($method->getParameters()),
-                    schemaReturn: $method->hasReturnType()
-                        ? TypeMultiple::parse($method->getReturnType())
-                        : $builderReturn,
+                    schemaReturn: $returnType,
                     description: $this->viaDescription(),
                 ),
             );
