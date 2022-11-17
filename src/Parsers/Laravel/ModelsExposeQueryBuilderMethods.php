@@ -147,6 +147,10 @@ class ModelsExposeQueryBuilderMethods extends AbstractLaravelParser
             'getModel' => [$static],
         ];
 
+        $collections = [
+            'get',
+        ];
+
         $clone = (new \ReflectionClass($builder))->getMethods();
 
         foreach ($clone as $method) {
@@ -163,6 +167,12 @@ class ModelsExposeQueryBuilderMethods extends AbstractLaravelParser
             $returnType = $method->hasReturnType()
                 ? TypeMultiple::parse($method->getReturnType())
                 : $builderReturn;
+
+            if (in_array($name, $collections)) {
+                $returnType = TypeMultiple::parse('\Illuminate\Database\Eloquent\Collection')
+                    ->genericsKey('int')
+                    ->genericsValue($model);
+            }
 
             if (isset($nonBuilderMethods[$name])) {
                 $returnType = TypeMultiple::parse($nonBuilderMethods[$name]);
