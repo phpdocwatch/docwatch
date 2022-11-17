@@ -163,8 +163,8 @@ class TypeMultiple implements Stringable
 
     public function is(string $type): bool
     {
-        foreach ($this->types as $type) {
-            if ($type->is($type)) {
+        foreach ($this->types as $check) {
+            if ($check->is($type)) {
                 return true;
             }
         }

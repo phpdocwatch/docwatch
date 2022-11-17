@@ -11,6 +11,9 @@ return [
                 \DocWatch\Parsers\Laravel\ModelHasFactoryReturnsFactoryClass::class => true,
                 \DocWatch\Parsers\Laravel\RelationsAsProperties::class => true,
                 \DocWatch\Parsers\Laravel\ScopesAsMethods::class => true,
+                \DocWatch\Parsers\Laravel\ModelsExposeQueryBuilderMethods::class => [
+                    'customBuildersReturnExactModel' => true,
+                ],
             ],
         ],
 
