@@ -59,24 +59,37 @@ class MacrosAsMethods extends AbstractLaravelParser
 
             // Get the return type of the macro'd method
             $returnType = $m[4][$macroIndex] ?? '';
+            $returnTypes = [];
 
             if (!empty($returnType)) {
                 $nullable = (substr($returnType, 0, 1) === '?');
-                $returnType = ltrim($returnType, '?');
-                $returnType = $this->guessNamespaceOfClass($returnType);
-                $returnType = (array) $returnType;
-    
+                
+                $returnTypes = explode('|', $returnType);
+
+                foreach ($returnTypes as $key => $returnType) {
+                    $returnType = ltrim($returnType, '?');
+                    $returnType = $this->guessNamespaceOfClass($returnType);
+                    $returnType = (array) $returnType;
+
+                    $returnTypes[$key] = $returnType;
+                } 
+
                 if ($nullable) {
-                    $returnType[] = 'null';
+                    $returnTypes[] = 'null';
                 }
             }
 
-            $return = (empty($returnType)) ? null : TypeMultiple::parse($returnType);
+            $return = (empty($returnTypes)) ? null : TypeMultiple::parse($returnTypes);
 
             // Get the args of the macro'd method
+            $args = explode(', ', $m[3][$macroIndex]);
+            $args = array_filter(
+                $args,
+                fn ($arg) => ! empty($arg),
+            );
             $args = array_map(
                 fn (string $arg) => $this->parseArgumentString($arg),
-                explode(', ', $m[3][$macroIndex]),
+                $args,
             );
             $args = new ArgumentList($args);
 
@@ -98,6 +111,10 @@ class MacrosAsMethods extends AbstractLaravelParser
 
     public function guessNamespaceOfClass(string $class): string
     {
+        if (static::isPrimitiveType($class)) {
+            return $class;
+        }
+        
         // If the class starts with a backslash, it's a fully qualified class name
         if ((substr($class, 0, 1) === '\\')) {
             return $class;
