@@ -69,7 +69,7 @@ class Doc
         }
 
         $args = [];
-        if ($this->schemaArgs) {
+        if ($this->schemaArgs && $this->schemaArgs->isNotEmpty()) {
             $args[] = (string) $this->schemaArgs;
         }
 
