@@ -5,6 +5,7 @@ namespace DocWatch\Parsers;
 use DocWatch\Doc;
 use DocWatch\Docs;
 use DocWatch\File;
+use DocWatch\TypeSingle;
 
 abstract class AbstractParser implements ParserInterface
 {
@@ -85,29 +86,6 @@ abstract class AbstractParser implements ParserInterface
     ];
 
     /**
-     * Types you may find in return type declarations
-     *
-     * @var array<string>
-     */
-    public const PRIMITIVE_TYPES = [
-        'self',
-        'static',
-        'array',
-        'callable',
-        'bool',
-        'float',
-        'int',
-        'string',
-        'iterable',
-        'object',
-        'mixed',
-        'false',
-        'never',
-        'void',
-        'resource',
-    ];
-
-    /**
      * Configuration for this parser
      *
      * @var array
@@ -181,6 +159,6 @@ abstract class AbstractParser implements ParserInterface
 
     public static function isPrimitiveType(string $type): bool
     {
-        return in_array($type, static::PRIMITIVE_TYPES);
+        return in_array($type, TypeSingle::PRIMITIVE_TYPES);
     }
 }
