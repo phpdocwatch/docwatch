@@ -28,4 +28,14 @@ class ArgumentList
             $this->arguments,
         ));
     }
+
+    public function isNotEmpty(): bool
+    {
+        return ! empty($this->arguments);
+    }
+
+    public function isEmpty(): bool
+    {
+        return empty($this->arguments);
+    }
 }
