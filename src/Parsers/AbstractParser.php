@@ -10,7 +10,7 @@ abstract class AbstractParser implements ParserInterface
 {
     /**
      * Framework agnostic type mapping
-     * 
+     *
      * @var array<string,string>
      */
     public const TYPES = [
@@ -85,6 +85,29 @@ abstract class AbstractParser implements ParserInterface
     ];
 
     /**
+     * Types you may find in return type declarations
+     *
+     * @var array<string>
+     */
+    public const PRIMITIVE_TYPES = [
+        'self',
+        'static',
+        'array',
+        'callable',
+        'bool',
+        'float',
+        'int',
+        'string',
+        'iterable',
+        'object',
+        'mixed',
+        'false',
+        'never',
+        'void',
+        'resource',
+    ];
+
+    /**
      * Configuration for this parser
      *
      * @var array
@@ -154,5 +177,10 @@ abstract class AbstractParser implements ParserInterface
     public function standalone(): Doc|Docs|null
     {
         return null;
+    }
+
+    public static function isPrimitiveType(string $type): bool
+    {
+        return in_array($type, static::PRIMITIVE_TYPES);
     }
 }
