@@ -5,6 +5,7 @@ namespace DocWatch\Parsers\Laravel;
 use DocWatch\File;
 use DocWatch\Doc;
 use DocWatch\Docs;
+use DocWatch\TypeMultiple;
 use DocWatch\TypeSingle;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use ReflectionClass;
@@ -38,9 +39,7 @@ class CastsAsProperties extends AbstractLaravelParser
                     if ($reflection->implementsInterface(CastsAttributes::class)) {
                         $return = $reflection->getMethod('get')->getReturnType();
 
-                        if ($return instanceof ReflectionNamedType) {
-                            $type = $return->getName();
-                        }
+                        $type = TypeMultiple::parse($return);
                     }
                 } catch (\Throwable $e) {
                 }
