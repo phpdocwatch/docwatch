@@ -32,3 +32,4 @@ require_once realpath(__DIR__ . '/../app/Models/Product.php');
 require_once realpath(__DIR__ . '/../app/Models/ProductCategory.php');
 require_once realpath(__DIR__ . '/../app/Providers/AppServiceProvider.php');
 require_once realpath(__DIR__ . '/../app/Http/Requests/ProductCreateRequest.php');
+require_once realpath(__DIR__ . '/../app/Rules/SuitableTags.php');

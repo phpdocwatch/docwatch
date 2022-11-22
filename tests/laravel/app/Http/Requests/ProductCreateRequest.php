@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\SuitableTags;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProductCreateRequest extends FormRequest
@@ -37,6 +38,9 @@ class ProductCreateRequest extends FormRequest
             'price' => [
                 'required',
                 'numeric',
+            ],
+            'tags' => [
+                new SuitableTags(),
             ],
         ];
     }
