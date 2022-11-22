@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\LatLng;
+use App\Casts\LatLngOptional;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,6 +19,7 @@ class Brand extends Model
     public $casts = [
         'meta' => 'array',
         'coordinates' => LatLng::class,
+        'coordinates_optional' => LatLngOptional::class,
     ];
 
     public function scopeEstablishedRecently(Builder $query)

@@ -2,6 +2,7 @@
 
 namespace DocWatch\Parsers\Laravel;
 
+use DeepCopy\TypeMatcher\TypeMatcher;
 use DocWatch\File;
 use DocWatch\Doc;
 use DocWatch\Docs;
@@ -32,6 +33,9 @@ class CastsAsProperties extends AbstractLaravelParser
         }
 
         foreach ($instance->getCasts() as $property => $type) {
+            $readNullableFromDatabase = true;
+            $nullable = false;
+
             if (! in_array($type, TypeSingle::PRIMITIVE_TYPES)) {
                 try {
                     $reflection = new ReflectionClass($type);
@@ -40,23 +44,26 @@ class CastsAsProperties extends AbstractLaravelParser
                         $return = $reflection->getMethod('get')->getReturnType();
 
                         $type = TypeMultiple::parse($return);
+
+                        $readNullableFromDB = false;
                     }
                 } catch (\Throwable $e) {
                 }
             }
 
-            $type = [
+            $type = ($type instanceof TypeMultiple) ? $type->types : [
                 $type,
             ];
 
-            // Assumption: If a field with the same name as the accessor exists, it's the same field 
-            $field = $fields[$property] ?? [];
-            
-            if ($field['nullable'] ?? false) {
-                $type[] = 'null';
+            if ($readNullableFromDatabase) {
+                // Assumption: If a field with the same name as the accessor exists, it's the same field 
+                $field = $fields[$property] ?? [];
+    
+                // Is the DB field nullable?
+                $nullable = ($field['nullable'] ?? false);
             }
             
-            $type = static::parseTypes($type);
+            $type = static::parseTypes($type, $nullable);
 
             $docs->push(
                 new Doc(

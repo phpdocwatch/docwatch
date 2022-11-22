@@ -25,6 +25,7 @@ require_once 'laravel/serviceprovider.php';
  */
 require_once realpath(__DIR__ . '/../app/Builders/ProductBuilder.php');
 require_once realpath(__DIR__ . '/../app/Casts/LatLng.php');
+require_once realpath(__DIR__ . '/../app/Casts/LatLngOptional.php');
 require_once realpath(__DIR__ . '/../app/DTOs/Coordinates.php');
 require_once realpath(__DIR__ . '/../app/Models/Brand.php');
 require_once realpath(__DIR__ . '/../app/Models/Category.php');

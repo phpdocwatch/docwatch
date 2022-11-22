@@ -14,6 +14,7 @@ namespace App\Models;
 /**
  * @property array \$meta // [via CastsAsProperties]
  * @property \App\DTOs\Coordinates \$coordinates // [via CastsAsProperties]
+ * @property \App\DTOs\Coordinates|null \$coordinates_optional // [via CastsAsProperties]
  */
 class Brand
 {
