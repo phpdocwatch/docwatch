@@ -11,8 +11,9 @@ test('parser can generate property docs for all accessors for Comment model', fu
     $expect = <<<EOL
 namespace App\Models;
 /**
- * @property int \$net_likes // [via AccessorsAsProperties]::getNetLikesAttribute()
- * @property string|null \$preview // [via AccessorsAsProperties]::preview()
+ * @property-read int \$net_likes // [via AccessorsAsProperties]::getNetLikesAttribute()
+ * @property-write int \$rating // [via AccessorsAsProperties]::setRatingAttribute()
+ * @property-read string|null \$preview // [via AccessorsAsProperties]::preview()
  */
 class Comment
 {

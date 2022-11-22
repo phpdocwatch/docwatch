@@ -24,6 +24,17 @@ class Comment extends Model
         return $this->likes - $this->dislikes;
     }
 
+    public function setRatingAttribute(int $value)
+    {
+        if ($value < 0) {
+            $this->dislikes++;
+        }
+
+        if ($value > 0) {
+            $this->likes++;
+        }
+    }
+
     public function preview(): Attribute
     {
         return new Attribute(

@@ -174,12 +174,14 @@ class AccessorsAsProperties extends AbstractLaravelParser
             }
 
             // Get the accessor (get) or mutator (set) method for this property
-            $accessorMutator = $accessorMutators['get'] ?? $accessorMutators['set'];
+            $type = isset($accessorMutators['get']) ? 'read' : 'write';
+            $accessorMutator = $accessorMutators['get'] ?? ($accessorMutators['set'] ?? null);
+
             if ($accessorMutator !== null) {
                 $docs->push(
                     new Doc(
                         $file->namespace,
-                        'property',
+                        'property-' . $type,
                         $name,
                         schemaType: $accessorMutator['type'],
                         description: $this->viaDescription() . '::' . $accessorMutator['method'] . '()',

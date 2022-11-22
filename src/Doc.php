@@ -24,7 +24,7 @@ class Doc
 
     public function compile(): string
     {
-        if ($this->type === 'property') {
+        if ($this->type === 'property' || $this->type === 'property-read' || $this->type === 'property-write') {
             return $this->compileProperty();
         } elseif ($this->type === 'method') {
             return $this->compileMethod();
@@ -35,7 +35,7 @@ class Doc
     {
         $parts = [];
 
-        $parts[] = '@property';
+        $parts[] = '@' . $this->type; // property|property-read|property-write
 
         if ($this->schemaType) {
             $parts[] = (string) $this->schemaType;
