@@ -11,6 +11,7 @@ use DocWatch\Docs;
 use DocWatch\TypeMultiple;
 use ReflectionFunction;
 use ReflectionMethod;
+use ReflectionNamedType;
 use Throwable;
 
 class AccessorsAsProperties extends AbstractLaravelParser
@@ -83,7 +84,7 @@ class AccessorsAsProperties extends AbstractLaravelParser
 
             if ($newStyle) {
                 if (($type = $method->getReturnType()) && $method->isPublic()) {
-                    if (Attribute::class === $type->getName()) {
+                    if (($type instanceof ReflectionNamedType) && (Attribute::class === $type->getName())) {
                         // Get the name of the accessor property
                         $property = $name;
 
