@@ -14,9 +14,19 @@ class Model
         return property_exists($this, 'casts') ? $this->casts : [];
     }
 
+    public function newEloquentBuilder($query)
+    {
+        return new Builder($query);
+    }
+
     public function newQuery(): Builder
     {
-        return new Builder();
+        return $this->newEloquentBuilder(null);
+    }
+
+    public static function query(): Builder
+    {
+        return (new static())->newEloquentBuilder(null);
     }
 }
 

@@ -72,6 +72,9 @@ namespace App\Models;
  * @property \Illuminate\Support\Collection<int,\App\Models\Category> $categories // [via RelationsAsProperties]
  * @property \App\Models\Brand|null $brand // [via RelationsAsProperties]
  * @property \Illuminate\Support\Collection<int,\App\Models\Comment> $comments // [via RelationsAsProperties]
+ * @method \App\Builders\ProductBuilder newEloquentBuilder($query) // [via ModelsExposeQueryBuilderMethods]
+ * @method \App\Builders\ProductBuilder newQuery() // [via ModelsExposeQueryBuilderMethods]
+ * @method static \App\Builders\ProductBuilder query() // [via ModelsExposeQueryBuilderMethods]
  */
 class Product
 {
@@ -85,5 +88,22 @@ namespace App\Models;
  * @method static \Database\Factories\ProductCategoryFactory factory(array $attributes = [], int $count = 1) // [via ModelHasFactoryReturnsFactoryClass]
  */
 class ProductCategory
+{
+}
+
+
+
+
+namespace App\Builders;
+/**
+ * @method static self published() // [via ModelsExposeQueryBuilderMethods]
+ * @method static array skusMap() // [via ModelsExposeQueryBuilderMethods]
+ * @method static self withoutGlobalScopes(array|null $scopes = null) // [via ModelsExposeQueryBuilderMethods]
+ * @method static self whereKey($id) // [via ModelsExposeQueryBuilderMethods]
+ * @method static \App\Models\Product|null find($id, $columns = ["*"]) // [via ModelsExposeQueryBuilderMethods]
+ * @method static \App\Models\Product findOrFail($id, $columns = ["*"]) // [via ModelsExposeQueryBuilderMethods]
+ * @method static self testMethod() // [via ModelsExposeQueryBuilderMethods]
+ */
+class ProductBuilder
 {
 }

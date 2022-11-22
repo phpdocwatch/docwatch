@@ -20,9 +20,21 @@ class Carbon
 
 
 
+namespace Illuminate\Support;
+/**
+ * @method static string cleanTitle(string \$value) // [via MacrosAsMethods]
+ * @method static string cleanSnake(string \$value) // [via MacrosAsMethods]
+ */
+class Str
+{
+}
+
+
+
+
 namespace Illuminate\Database\Eloquent;
 /**
- * @method static whereLike(\$attributes, string \$searchTerm) // [via MacrosAsMethods]
+ * @method static \Illuminate\Database\Eloquent\Builder whereLike(array \$attributes, string \$searchTerm) // [via MacrosAsMethods]
  */
 class Builder
 {
