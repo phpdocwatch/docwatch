@@ -28,6 +28,7 @@ namespace App\Models;
  * @property \Carbon\Carbon|null $created_at // [via ColumnsAsProperties]
  * @property \Carbon\Carbon|null $updated_at // [via ColumnsAsProperties]
  * @property array $meta // [via CastsAsProperties]
+ * @property \App\DTOs\Coordinates $coordinates // [via CastsAsProperties]
  * @method static \Database\Factories\BrandFactory factory(array $attributes = [], int $count = 1) // [via ModelHasFactoryReturnsFactoryClass]
  * @property \App\Models\Product|null $firstProduct // [via RelationsAsProperties]
  * @property \Illuminate\Support\Collection<int,\App\Models\Product> $products // [via RelationsAsProperties]

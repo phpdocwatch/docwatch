@@ -24,6 +24,8 @@ require_once 'laravel/serviceprovider.php';
  * For Laravel, we're going to use the following models which cover most eloquent relationship types.
  */
 require_once realpath(__DIR__ . '/../app/Builders/ProductBuilder.php');
+require_once realpath(__DIR__ . '/../app/Casts/LatLng.php');
+require_once realpath(__DIR__ . '/../app/DTOs/Coordinates.php');
 require_once realpath(__DIR__ . '/../app/Models/Brand.php');
 require_once realpath(__DIR__ . '/../app/Models/Category.php');
 require_once realpath(__DIR__ . '/../app/Models/Comment.php');

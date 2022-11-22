@@ -5,6 +5,10 @@ namespace DocWatch\Parsers\Laravel;
 use DocWatch\File;
 use DocWatch\Doc;
 use DocWatch\Docs;
+use DocWatch\TypeSingle;
+use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use ReflectionClass;
+use ReflectionNamedType;
 
 class CastsAsProperties extends AbstractLaravelParser
 {
@@ -27,10 +31,26 @@ class CastsAsProperties extends AbstractLaravelParser
         }
 
         foreach ($instance->getCasts() as $property => $type) {
+            if (! in_array($type, TypeSingle::PRIMITIVE_TYPES)) {
+                try {
+                    $reflection = new ReflectionClass($type);
+
+                    if ($reflection->implementsInterface(CastsAttributes::class)) {
+                        $return = $reflection->getMethod('get')->getReturnType();
+
+                        if ($return instanceof ReflectionNamedType) {
+                            $type = $return->getName();
+                        }
+                    }
+                } catch (\Throwable $e) {
+                }
+            }
+
             $type = [
                 $type,
             ];
 
+            // Assumption: If a field with the same name as the accessor exists, it's the same field 
             $field = $fields[$property] ?? [];
             
             if ($field['nullable'] ?? false) {

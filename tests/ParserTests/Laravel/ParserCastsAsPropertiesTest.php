@@ -13,6 +13,7 @@ test('parser can generate property docs for all casts for Brand model', function
 namespace App\Models;
 /**
  * @property array \$meta // [via CastsAsProperties]
+ * @property \App\DTOs\Coordinates \$coordinates // [via CastsAsProperties]
  */
 class Brand
 {
