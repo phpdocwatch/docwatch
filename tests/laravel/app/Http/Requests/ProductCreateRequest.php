@@ -30,6 +30,14 @@ class ProductCreateRequest extends FormRequest
             'categories' => 'required|array|min:1',
             'categories.*' => 'int|exists:categories,id',
             'json' => 'required|array', // this should not be accessible in the docs as $json is an existing property
+            'published_at' => [
+                'nullable',
+                'date',
+            ],
+            'price' => [
+                'required',
+                'numeric',
+            ],
         ];
     }
 }

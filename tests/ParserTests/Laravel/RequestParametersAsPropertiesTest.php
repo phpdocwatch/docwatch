@@ -15,6 +15,8 @@ namespace App\Http\Requests;
  * @property string|mixed \$name // [via RequestParametersAsProperties]
  * @property int|mixed \$brand_id // [via RequestParametersAsProperties]
  * @property array|mixed \$categories // [via RequestParametersAsProperties]
+ * @property string|mixed|null \$published_at // [via RequestParametersAsProperties]
+ * @property float|int|mixed \$price // [via RequestParametersAsProperties]
  */
 class ProductCreateRequest
 {
