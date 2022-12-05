@@ -1,7 +1,25 @@
 <?php
 
 use App\Models\Brand;
+use DocWatch\Exceptions\DoctrineDbalRequiredException;
 use DocWatch\Parsers\Laravel\AbstractLaravelParser;
+
+test('a model show fils when doctrine dbal does not exist in the composer.json file', function () {
+    /** Reset so that it is parsed from the composer.json file */
+    AbstractLaravelParser::$hasDoctrineDbal = null;
+    $e = null;
+    
+    try {
+        fakeArtisanModelShow();
+        AbstractLaravelParser::getModelData(Brand::class);
+    } catch (\Exception $e) {
+    }
+
+    expect($e)->toBeInstanceOf(DoctrineDbalRequiredException::class);
+
+    /** Reset so that other tests will read regardless on dbal (this package doesn't and shouldn't require it) */
+    AbstractLaravelParser::$hasDoctrineDbal = true;
+});
 
 test('laravel parser can identify columns and relations for a model', function () {
     fakeArtisanModelShow();

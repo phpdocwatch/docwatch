@@ -3,9 +3,12 @@
 use Illuminate\Support\Facades\Artisan;
 use DocWatch\Documentor;
 use DocWatch\File;
+use DocWatch\Parsers\Laravel\AbstractLaravelParser;
 use DocWatch\Resolver;
 
 Documentor::fake();
+AbstractLaravelParser::$hasDoctrineDbal = true;
+
 require_once 'laravel/vendor/autoload-fake.php';
 
 require_once __DIR__ . '/fixtures/ReflectionParameterItem.php';
